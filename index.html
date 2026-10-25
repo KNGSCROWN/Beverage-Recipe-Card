@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Master BRC - Live Barista Recipe & Cost Viewer</title>
-    <!-- Browser Tab Favicon Icon -->
+    <!-- Custom Browser Tab Icon (Favicon) -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -68,7 +68,7 @@
             </div>
         </div>
 
-        <!-- Big Prominent Loading Banner -->
+        <!-- Big Prominent Loading Banner / Prompt Message -->
         <div id="loadingState" class="bg-white rounded-2xl shadow-lg border border-coffee-200 p-12 text-center max-w-xl mx-auto my-16">
             <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-coffee-700 border-t-transparent mb-4"></div>
             <h2 class="text-2xl font-black text-coffee-900 mb-2">Connecting to Google Sheet API...</h2>
@@ -201,3 +201,30 @@
         function renderGrid(data) {
             const grid = document.getElementById('recipeGrid');
             if (data.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500 text-sm">No recipes found matching your search.</div>`;
+                return;
+            }
+
+            grid.innerHTML = data.map((r, index) => `
+                <div onclick="openRecipeModal(${recipes.indexOf(r)})" class="bg-white rounded-xl shadow-sm hover:shadow-md transition border border-coffee-100 overflow-hidden cursor-pointer flex flex-col">
+                    <div class="h-48 bg-coffee-100 relative overflow-hidden">
+                        ${r.image ? `<img src="${r.image}" loading="lazy" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-3xl">☕</div>`}
+                        <span class="absolute top-2 left-2 bg-coffee-900/80 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-sm font-medium">${r.category || 'Recipe'}</span>
+                    </div>
+                    <div class="p-4 flex flex-col flex-grow">
+                        <h3 class="font-bold text-coffee-900 text-sm mb-1">${r.name || 'Untitled Drink'}</h3>
+                        <div class="flex items-center text-xs text-gray-500 space-x-3 mb-3">
+                            <span>🥤 ${r.servingSize || 'Standard'}</span>
+                            <span>⏱️ ${r.prepTime ? r.prepTime + ' mins' : '3 mins'}</span>
+                        </div>
+                        <div class="mt-auto pt-2 border-t border-coffee-50 flex justify-between items-center text-xs">
+                            <span class="text-gray-500">Total Cost</span>
+                            <span class="font-bold text-coffee-800 text-sm">${r.totalCost || 'P0.00'}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openRecipeModal(index) {
+            const r =
