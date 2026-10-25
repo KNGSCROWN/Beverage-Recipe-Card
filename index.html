@@ -227,4 +227,100 @@
         }
 
         function openRecipeModal(index) {
-            const r =
+            const r = recipes[index];
+            if (!r) return;
+
+            const modal = document.getElementById('recipeModal');
+            const content = document.getElementById('modalContent');
+            const stepsList = r.steps ? r.steps.split('\n').filter(s => s.trim() !== '') : [];
+
+            content.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row border border-coffee-200">
+                    <div class="w-full md:w-5/12 bg-coffee-900 text-white p-6 flex flex-col justify-between">
+                        <div>
+                            <div class="rounded-xl overflow-hidden shadow-md h-64 bg-coffee-800 border-2 border-white/10 mb-5">
+                                ${r.image ? `<img src="${r.image}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-4xl">☕</div>`}
+                            </div>
+                            <span class="inline-block bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider mb-2">${r.category || 'Basic Coffee'}</span>
+                            <h2 class="text-2xl font-black text-white leading-tight mb-4">${r.name || 'Recipe'}</h2>
+
+                            <div class="space-y-3 text-xs border-t border-white/15 pt-4">
+                                <div class="flex justify-between items-center pb-2 border-b border-white/10">
+                                    <span class="text-coffee-200">Serving size</span>
+                                    <span class="font-bold text-white">${r.servingSize || 'N/A'}</span>
+                                </div>
+                                <div class="flex justify-between items-center pb-2 border-b border-white/10">
+                                    <span class="text-coffee-200">Prep time</span>
+                                    <span class="font-bold text-white">${r.prepTime ? r.prepTime + ' mins' : 'N/A'}</span>
+                                </div>
+                                <div class="flex justify-between items-center pb-2 border-b border-white/10">
+                                    <span class="text-coffee-200">Ingredients</span>
+                                    <span class="font-bold text-white">${r.ingredients ? r.ingredients.length + ' items' : '0 items'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 pt-4 border-t border-white/15 flex justify-between items-end">
+                            <span class="text-xs text-coffee-200 font-medium">Total cost</span>
+                            <span class="text-2xl font-black text-amber-300">${r.totalCost || 'P0.00'}</span>
+                        </div>
+                    </div>
+
+                    <div class="w-full md:w-7/12 p-6 md:p-8 bg-white flex flex-col justify-between">
+                        <div>
+                            <div class="mb-6">
+                                <h3 class="text-sm font-bold text-coffee-900 mb-3 tracking-wide">Ingredients</h3>
+                                <div class="text-xs">
+                                    <div class="flex justify-between font-bold text-gray-500 pb-2 border-b border-gray-300">
+                                        <span>Item</span>
+                                        <div class="flex space-x-10">
+                                            <span>Usage</span>
+                                            <span>Cost</span>
+                                        </div>
+                                    </div>
+                                    <div class="divide-y divide-dashed divide-gray-200">
+                                        ${r.ingredients && r.ingredients.length > 0 ? r.ingredients.map(i => `
+                                            <div class="py-2.5 flex justify-between items-center">
+                                                <span class="font-medium text-coffee-900 pr-2">${i.item}</span>
+                                                <div class="flex space-x-6 text-right flex-shrink-0">
+                                                    <span class="text-gray-600 w-12">${i.amount}</span>
+                                                    <span class="font-semibold text-coffee-800 w-14">${i.cost}</span>
+                                                </div>
+                                            </div>
+                                        `).join('') : `<div class="py-3 text-gray-400 italic">No ingredients listed</div>`}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="text-sm font-bold text-coffee-900 mb-3 tracking-wide">Method</h3>
+                                <div class="space-y-3">
+                                    ${stepsList.length > 0 ? stepsList.map((step, idx) => `
+                                        <div class="flex items-start text-xs">
+                                            <span class="bg-coffee-900 text-white w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] flex-shrink-0 mr-3 mt-0.5">${idx + 1}</span>
+                                            <span class="text-gray-700 leading-relaxed">${step}</span>
+                                        </div>
+                                    `).join('') : `<p class="text-xs text-gray-500 italic">No preparation steps listed.</p>`}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('recipeModal').classList.add('hidden');
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('recipeModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>
