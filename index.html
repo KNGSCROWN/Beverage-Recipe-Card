@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Master BRC - Live Barista Recipe & Cost Viewer</title>
-    <!-- Tailwind CSS CDN -->
+    <!-- Tailwind CSS for dashboard grid & controls -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -86,10 +86,10 @@
         <div id="recipeGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
     </main>
 
-    <!-- Recipe Detail Modal (Exact 2-Column PDF/Sheet Design Match) -->
+    <!-- Recipe Detail Modal (Matches exact Google Sheet HTML Template Design) -->
     <div id="recipeModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
-        <div class="relative max-w-4xl w-full max-h-[95vh] overflow-y-auto">
-            <button onclick="closeModal()" class="absolute top-3 right-3 z-10 bg-black/50 hover:bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition">✕</button>
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 bg-gray-100 hover:bg-gray-200 text-gray-700 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition z-10">✕</button>
             <div id="modalContent"></div>
         </div>
     </div>
@@ -241,6 +241,25 @@
             `).join('');
         }
 
+        // Helper functions mirroring your Google Apps Script template logic
+        function tidy(s) {
+            s = String(s == null ? '' : s);
+            if (s !== '' && s === s.toUpperCase()) {
+                s = s.toLowerCase().replace(/(^|[\s(\/-])([a-z])/g, function (m, a, b) {
+                    return a + b.toUpperCase();
+                });
+            }
+            return s;
+        }
+
+        function money(s) { 
+            return String(s == null ? '' : s).replace(/^P/, 'PHP '); 
+        }
+
+        function unit(s) { 
+            return String(s == null ? '' : s).replace(/\s+[A-Za-z]+$/, function (u) { return u.toLowerCase(); }); 
+        }
+
         function openRecipeModal(index) {
             const r = recipes[index];
             if (!r) return;
@@ -248,92 +267,98 @@
             const modal = document.getElementById('recipeModal');
             const content = document.getElementById('modalContent');
 
-            const stepsList = r.steps ? r.steps.split('\n').filter(s => s.trim() !== '') : [];
+            const nameParts = String(r.name || '').split(/\s+-\s+/);
+            const title = tidy(nameParts[0]);
+            const subtitle = tidy(nameParts.slice(1).join(' - '));
+
+            const steps = String(r.steps || '').split(/\r?\n/)
+                .map(function (s) { return s.replace(/^\s*\d+[\.\)]\s*/, '').trim(); })
+                .filter(function (s) { return s.length > 0; });
 
             content.innerHTML = `
-                <div class="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row border border-coffee-200">
-                    
-                    <!-- Left Dark Brown Sidebar Panel -->
-                    <div class="w-full md:w-5/12 bg-coffee-900 text-white p-6 flex flex-col justify-between">
-                        <div>
-                            <!-- Photo Box with Light Border -->
-                            <div class="rounded-xl overflow-hidden shadow-md h-64 bg-coffee-800 border-2 border-white/10 mb-5">
-                                ${r.image ? `<img src="${r.image}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-4xl">☕</div>`}
-                            </div>
+                <style>
+                    .modal-body { font-family: Arial, Helvetica, sans-serif; color: #241c17; font-size: 12px; }
+                    .modal-body table { border-collapse: collapse; width: 100%; }
+                    .modal-body .label { font-size: 10px; color: #7a6e65; }
+                    .modal-body .value { font-size: 13px; font-weight: bold; }
+                    .modal-body h2 { font-size: 16px; color: #2b1d16; margin: 20px 0 6px 0; }
+                    .modal-body th { text-align: left; font-size: 10px; color: #7a6e65; font-weight: normal; padding: 5px 0; border-bottom: 1px solid #241c17; }
+                </style>
 
-                            <!-- Category Badge -->
-                            <span class="inline-block bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider mb-2">${r.category || 'Basic Coffee'}</span>
-                            
-                            <!-- Drink Name -->
-                            <h2 class="text-2xl font-black text-white leading-tight mb-4">${r.name || 'Recipe'}</h2>
+                <div class="modal-body bg-white">
+                    <!-- Title band -->
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td bgcolor="#2b1d16" style="padding: 20px 24px; border-radius: 8px;">
+                                <div style="font-size: 24px; font-weight: bold; color: #ffffff;">${title}</div>
+                                ${subtitle ? `<div style="font-size: 14px; color: #d8c9bb; margin-top: 4px;">${subtitle}</div>` : ''}
+                            </td>
+                        </tr>
+                    </table>
 
-                            <!-- Key-Value Stats Rows -->
-                            <div class="space-y-3 text-xs border-t border-white/15 pt-4">
-                                <div class="flex justify-between items-center pb-2 border-b border-white/10">
-                                    <span class="text-coffee-200">Serving size</span>
-                                    <span class="font-bold text-white">${r.servingSize || 'N/A'}</span>
-                                </div>
-                                <div class="flex justify-between items-center pb-2 border-b border-white/10">
-                                    <span class="text-coffee-200">Prep time</span>
-                                    <span class="font-bold text-white">${r.prepTime ? r.prepTime + ' mins' : 'N/A'}</span>
-                                </div>
-                                <div class="flex justify-between items-center pb-2 border-b border-white/10">
-                                    <span class="text-coffee-200">Ingredients</span>
-                                    <span class="font-bold text-white">${r.ingredients ? r.ingredients.length + ' items' : '0 items'}</span>
-                                </div>
-                            </div>
-                        </div>
+                    <!-- Photo + quick facts -->
+                    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 16px;">
+                        <tr>
+                            <td width="240" valign="top">
+                                ${r.image && r.image !== "" ? 
+                                    `<img src="${r.image}" width="230" style="border-radius: 6px;">` : 
+                                    `<table width="230" cellpadding="0" cellspacing="0"><tr><td bgcolor="#efece7" height="180" align="center" style="color: #7a6e65; border-radius: 6px;">No photo</td></tr></table>`
+                                }
+                            </td>
+                            <td valign="top" style="padding-left: 18px;">
+                                <table width="100%" cellpadding="0" cellspacing="0">
+                                    <tr><td style="padding: 6px 0; border-bottom: 1px solid #e8e1d8;">
+                                        <div class="label">Category</div>
+                                        <div class="value">${r.category || '-'}</div>
+                                    </td></tr>
+                                    <tr><td style="padding: 6px 0; border-bottom: 1px solid #e8e1d8;">
+                                        <div class="label">Serving size</div>
+                                        <div class="value">${r.servingSize || '-'}</div>
+                                    </td></tr>
+                                    <tr><td style="padding: 6px 0; border-bottom: 1px solid #e8e1d8;">
+                                        <div class="label">Prep time</div>
+                                        <div class="value">${r.prepTime ? r.prepTime + ' mins' : '-'}</div>
+                                    </td></tr>
+                                </table>
+                                <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 10px;">
+                                    <tr><td bgcolor="#2b1d16" style="padding: 10px 14px; border-radius: 6px;">
+                                        <div style="font-size: 11px; color: #d8c9bb;">Total cost</div>
+                                        <div style="font-size: 22px; font-weight: bold; color: #e0a846;">${money(r.totalCost)}</div>
+                                    </td></tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
 
-                        <!-- Total Cost Footer in Gold -->
-                        <div class="mt-8 pt-4 border-t border-white/15 flex justify-between items-end">
-                            <span class="text-xs text-coffee-200 font-medium">Total cost</span>
-                            <span class="text-2xl font-black text-amber-300">${r.totalCost || 'P0.00'}</span>
-                        </div>
-                    </div>
+                    <!-- Ingredients -->
+                    <h2>Ingredients</h2>
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <th>Item</th>
+                            <th width="100" style="text-align: right;">Usage</th>
+                            <th width="100" style="text-align: right;">Cost</th>
+                        </tr>
+                        ${r.ingredients && r.ingredients.length > 0 ? r.ingredients.map(ing => `
+                            <tr>
+                                <td style="padding: 8px 0; border-bottom: 1px solid #e8e1d8;">${tidy(ing.item)}</td>
+                                <td align="right" style="padding: 8px 0; border-bottom: 1px solid #e8e1d8; color: #7a6e65;">${unit(ing.amount)}</td>
+                                <td align="right" style="padding: 8px 0; border-bottom: 1px solid #e8e1d8; font-weight: bold;">${money(ing.cost)}</td>
+                            </tr>
+                        `).join('') : `<tr><td colspan="3" style="padding: 10px; text-align: center; color: #7a6e65;">No ingredients listed</td></tr>`}
+                    </table>
 
-                    <!-- Right Content Panel -->
-                    <div class="w-full md:w-7/12 p-6 md:p-8 bg-white flex flex-col justify-between">
-                        <div>
-                            <!-- Ingredients Table -->
-                            <div class="mb-6">
-                                <h3 class="text-sm font-bold text-coffee-900 mb-3 tracking-wide">Ingredients</h3>
-                                <div class="text-xs">
-                                    <div class="flex justify-between font-bold text-gray-500 pb-2 border-b border-gray-300">
-                                        <span>Item</span>
-                                        <div class="flex space-x-10">
-                                            <span>Usage</span>
-                                            <span>Cost</span>
-                                        </div>
-                                    </div>
-                                    <div class="divide-y divide-dashed divide-gray-200">
-                                        ${r.ingredients && r.ingredients.length > 0 ? r.ingredients.map(i => `
-                                            <div class="py-2.5 flex justify-between items-center">
-                                                <span class="font-medium text-coffee-900 pr-2">${i.item}</span>
-                                                <div class="flex space-x-6 text-right flex-shrink-0">
-                                                    <span class="text-gray-600 w-12">${i.amount}</span>
-                                                    <span class="font-semibold text-coffee-800 w-14">${i.cost}</span>
-                                                </div>
-                                            </div>
-                                        `).join('') : `<div class="py-3 text-gray-400 italic">No ingredients listed</div>`}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Method Section -->
-                            <div>
-                                <h3 class="text-sm font-bold text-coffee-900 mb-3 tracking-wide">Method</h3>
-                                <div class="space-y-3">
-                                    ${stepsList.length > 0 ? stepsList.map((step, idx) => `
-                                        <div class="flex items-start text-xs">
-                                            <span class="bg-coffee-900 text-white w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] flex-shrink-0 mr-3 mt-0.5">${idx + 1}</span>
-                                            <span class="text-gray-700 leading-relaxed">${step}</span>
-                                        </div>
-                                    `).join('') : `<p class="text-xs text-gray-500 italic">No preparation steps listed.</p>`}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
+                    <!-- Method -->
+                    ${steps.length > 0 ? `
+                        <h2>Method</h2>
+                        <table width="100%" cellpadding="0" cellspacing="0">
+                            ${steps.map((step, j) => `
+                                <tr>
+                                    <td width="26" valign="top" style="padding: 8px 0; border-bottom: 1px solid #e8e1d8; font-weight: bold; color: #2b1d16;">${j + 1}.</td>
+                                    <td valign="top" style="padding: 8px 0; border-bottom: 1px solid #e8e1d8; line-height: 1.5; color: #241c17;">${step}</td>
+                                </tr>
+                            `).join('')}
+                        </table>
+                    ` : ''}
                 </div>
             `;
 
