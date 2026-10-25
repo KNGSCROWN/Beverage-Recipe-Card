@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Master BRC - Live Barista Recipe & Cost Viewer</title>
+    <!-- Browser Tab Favicon Icon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -66,7 +68,7 @@
             </div>
         </div>
 
-        <!-- Big Prominent Loading Banner / Prompt Message -->
+        <!-- Big Prominent Loading Banner -->
         <div id="loadingState" class="bg-white rounded-2xl shadow-lg border border-coffee-200 p-12 text-center max-w-xl mx-auto my-16">
             <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-coffee-700 border-t-transparent mb-4"></div>
             <h2 class="text-2xl font-black text-coffee-900 mb-2">Connecting to Google Sheet API...</h2>
@@ -139,61 +141,31 @@
             fetchRecipes();
         }
 
-        const LS_KEY = 'brc_recipes_v2';
-
-        // Hide duplicate/copy tabs coming from the sheet
-        function cleanList(list) {
-            return list.filter(r => !/^copy of /i.test(r.sheetName || r.name || ''));
-        }
-
         async function fetchRecipes() {
             const statusEl = document.getElementById('syncStatus');
             const loadingEl = document.getElementById('loadingState');
             const gridEl = document.getElementById('recipeGrid');
-
-            // 1) Show last saved data instantly (if any)
-            let hadCache = false;
-            try {
-                const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
-                if (saved && Array.isArray(saved.data) && saved.data.length) {
-                    recipes = cleanList(saved.data);
-                    hadCache = true;
-                    buildCategories();
-                    filterRecipes();
-                    loadingEl.classList.add('hidden');
-                }
-            } catch (e) {}
-
-            if (!hadCache) {
-                loadingEl.classList.remove('hidden');
-                gridEl.innerHTML = '';
-            }
+            
+            loadingEl.classList.remove('hidden');
+            gridEl.innerHTML = '';
             statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 mr-1.5 animate-ping"></span> Syncing...`;
 
-            // 2) Refresh in the background; only re-render if something changed
             try {
                 const response = await fetch(apiUrl);
                 const result = await response.json();
-
+                
                 if (result.status === 'success' && Array.isArray(result.data)) {
-                    const fresh = cleanList(result.data);
-                    const changed = JSON.stringify(fresh) !== JSON.stringify(recipes);
-                    recipes = fresh;
-                    try { localStorage.setItem(LS_KEY, JSON.stringify({ data: result.data })); } catch (e) {}
+                    recipes = result.data;
                     statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5"></span> Live Connected (${recipes.length} recipes)`;
-                    if (changed || !hadCache) {
-                        buildCategories();
-                        filterRecipes();
-                    }
+                    buildCategories();
+                    renderGrid(recipes);
                 } else {
                     throw new Error(result.message || 'Invalid data format');
                 }
             } catch (err) {
                 console.error(err);
-                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500 mr-1.5"></span> ${hadCache ? 'Offline (showing saved data)' : 'Connection Error'}`;
-                if (!hadCache) {
-                    gridEl.innerHTML = `<div class="col-span-full text-center py-12 text-red-500 text-sm font-semibold">Failed to sync recipes from Google Sheet. Please check your network or API URL.</div>`;
-                }
+                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500 mr-1.5"></span> Connection Error`;
+                gridEl.innerHTML = `<div class="col-span-full text-center py-12 text-red-500 text-sm font-semibold">Failed to sync recipes from Google Sheet. Please check your network or API URL.</div>`;
             } finally {
                 loadingEl.classList.add('hidden');
             }
@@ -229,126 +201,3 @@
         function renderGrid(data) {
             const grid = document.getElementById('recipeGrid');
             if (data.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500 text-sm">No recipes found matching your search.</div>`;
-                return;
-            }
-
-            grid.innerHTML = data.map((r, index) => `
-                <div onclick="openRecipeModal(${recipes.indexOf(r)})" class="bg-white rounded-xl shadow-sm hover:shadow-md transition border border-coffee-100 overflow-hidden cursor-pointer flex flex-col">
-                    <div class="h-48 bg-coffee-100 relative overflow-hidden">
-                        ${r.image ? `<img src="${r.image}" loading="lazy" decoding="async" onerror="this.style.display='none'" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-3xl">☕</div>`}
-                        <span class="absolute top-2 left-2 bg-coffee-900/80 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-sm font-medium">${r.category || 'Recipe'}</span>
-                    </div>
-                    <div class="p-4 flex flex-col flex-grow">
-                        <h3 class="font-bold text-coffee-900 text-sm mb-1">${r.name || 'Untitled Drink'}</h3>
-                        <div class="flex items-center text-xs text-gray-500 space-x-3 mb-3">
-                            <span>🥤 ${r.servingSize || 'Standard'}</span>
-                            <span>⏱️ ${r.prepTime ? r.prepTime + ' mins' : '3 mins'}</span>
-                        </div>
-                        <div class="mt-auto pt-2 border-t border-coffee-50 flex justify-between items-center text-xs">
-                            <span class="text-gray-500">Total Cost</span>
-                            <span class="font-bold text-coffee-800 text-sm">${r.totalCost || 'P0.00'}</span>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function openRecipeModal(index) {
-            const r = recipes[index];
-            if (!r) return;
-
-            const modal = document.getElementById('recipeModal');
-            const content = document.getElementById('modalContent');
-            const stepsList = r.steps ? r.steps.split('\n').map(s => s.replace(/^\s*\d+[.)]\s*/, '').trim()).filter(s => s !== '') : [];
-
-            content.innerHTML = `
-                <div class="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row border border-coffee-200">
-                    <div class="w-full md:w-5/12 bg-coffee-900 text-white p-6 flex flex-col justify-between">
-                        <div>
-                            <div class="rounded-xl overflow-hidden shadow-md h-64 bg-coffee-800 border-2 border-white/10 mb-5">
-                                ${r.image ? `<img src="${r.image}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-4xl">☕</div>`}
-                            </div>
-                            <span class="inline-block bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider mb-2">${r.category || 'Basic Coffee'}</span>
-                            <h2 class="text-2xl font-black text-white leading-tight mb-4">${r.name || 'Recipe'}</h2>
-
-                            <div class="space-y-3 text-xs border-t border-white/15 pt-4">
-                                <div class="flex justify-between items-center pb-2 border-b border-white/10">
-                                    <span class="text-coffee-200">Serving size</span>
-                                    <span class="font-bold text-white">${r.servingSize || 'N/A'}</span>
-                                </div>
-                                <div class="flex justify-between items-center pb-2 border-b border-white/10">
-                                    <span class="text-coffee-200">Prep time</span>
-                                    <span class="font-bold text-white">${r.prepTime ? r.prepTime + ' mins' : 'N/A'}</span>
-                                </div>
-                                <div class="flex justify-between items-center pb-2 border-b border-white/10">
-                                    <span class="text-coffee-200">Ingredients</span>
-                                    <span class="font-bold text-white">${r.ingredients ? r.ingredients.length + ' items' : '0 items'}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-8 pt-4 border-t border-white/15 flex justify-between items-end">
-                            <span class="text-xs text-coffee-200 font-medium">Total cost</span>
-                            <span class="text-2xl font-black text-amber-300">${r.totalCost || 'P0.00'}</span>
-                        </div>
-                    </div>
-
-                    <div class="w-full md:w-7/12 p-6 md:p-8 bg-white flex flex-col justify-between">
-                        <div>
-                            <div class="mb-6">
-                                <h3 class="text-sm font-bold text-coffee-900 mb-3 tracking-wide">Ingredients</h3>
-                                <div class="text-xs">
-                                    <div class="flex justify-between font-bold text-gray-500 pb-2 border-b border-gray-300">
-                                        <span>Item</span>
-                                        <div class="flex space-x-10">
-                                            <span>Usage</span>
-                                            <span>Cost</span>
-                                        </div>
-                                    </div>
-                                    <div class="divide-y divide-dashed divide-gray-200">
-                                        ${r.ingredients && r.ingredients.length > 0 ? r.ingredients.map(i => `
-                                            <div class="py-2.5 flex justify-between items-center">
-                                                <span class="font-medium text-coffee-900 pr-2">${i.item}</span>
-                                                <div class="flex space-x-6 text-right flex-shrink-0">
-                                                    <span class="text-gray-600 w-12">${i.amount}</span>
-                                                    <span class="font-semibold text-coffee-800 w-14">${i.cost}</span>
-                                                </div>
-                                            </div>
-                                        `).join('') : `<div class="py-3 text-gray-400 italic">No ingredients listed</div>`}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <h3 class="text-sm font-bold text-coffee-900 mb-3 tracking-wide">Method</h3>
-                                <div class="space-y-3">
-                                    ${stepsList.length > 0 ? stepsList.map((step, idx) => `
-                                        <div class="flex items-start text-xs">
-                                            <span class="bg-coffee-900 text-white w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] flex-shrink-0 mr-3 mt-0.5">${idx + 1}</span>
-                                            <span class="text-gray-700 leading-relaxed">${step}</span>
-                                        </div>
-                                    `).join('') : `<p class="text-xs text-gray-500 italic">No preparation steps listed.</p>`}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            modal.classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('recipeModal').classList.add('hidden');
-        }
-
-        window.onclick = function(event) {
-            const modal = document.getElementById('recipeModal');
-            if (event.target === modal) {
-                closeModal();
-            }
-        }
-    </script>
-</body>
-</html>
