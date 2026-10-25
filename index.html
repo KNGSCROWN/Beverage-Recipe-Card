@@ -139,31 +139,61 @@
             fetchRecipes();
         }
 
+        const LS_KEY = 'brc_recipes_v2';
+
+        // Hide duplicate/copy tabs coming from the sheet
+        function cleanList(list) {
+            return list.filter(r => !/^copy of /i.test(r.sheetName || r.name || ''));
+        }
+
         async function fetchRecipes() {
             const statusEl = document.getElementById('syncStatus');
             const loadingEl = document.getElementById('loadingState');
             const gridEl = document.getElementById('recipeGrid');
-            
-            loadingEl.classList.remove('hidden');
-            gridEl.innerHTML = '';
+
+            // 1) Show last saved data instantly (if any)
+            let hadCache = false;
+            try {
+                const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+                if (saved && Array.isArray(saved.data) && saved.data.length) {
+                    recipes = cleanList(saved.data);
+                    hadCache = true;
+                    buildCategories();
+                    filterRecipes();
+                    loadingEl.classList.add('hidden');
+                }
+            } catch (e) {}
+
+            if (!hadCache) {
+                loadingEl.classList.remove('hidden');
+                gridEl.innerHTML = '';
+            }
             statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 mr-1.5 animate-ping"></span> Syncing...`;
 
+            // 2) Refresh in the background; only re-render if something changed
             try {
                 const response = await fetch(apiUrl);
                 const result = await response.json();
-                
+
                 if (result.status === 'success' && Array.isArray(result.data)) {
-                    recipes = result.data;
+                    const fresh = cleanList(result.data);
+                    const changed = JSON.stringify(fresh) !== JSON.stringify(recipes);
+                    recipes = fresh;
+                    try { localStorage.setItem(LS_KEY, JSON.stringify({ data: result.data })); } catch (e) {}
                     statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5"></span> Live Connected (${recipes.length} recipes)`;
-                    buildCategories();
-                    renderGrid(recipes);
+                    if (changed || !hadCache) {
+                        buildCategories();
+                        filterRecipes();
+                    }
                 } else {
                     throw new Error(result.message || 'Invalid data format');
                 }
             } catch (err) {
                 console.error(err);
-                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500 mr-1.5"></span> Connection Error`;
-                gridEl.innerHTML = `<div class="col-span-full text-center py-12 text-red-500 text-sm font-semibold">Failed to sync recipes from Google Sheet. Please check your network or API URL.</div>`;
+                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500 mr-1.5"></span> ${hadCache ? 'Offline (showing saved data)' : 'Connection Error'}`;
+                if (!hadCache) {
+                    gridEl.innerHTML = `<div class="col-span-full text-center py-12 text-red-500 text-sm font-semibold">Failed to sync recipes from Google Sheet. Please check your network or API URL.</div>`;
+                }
             } finally {
                 loadingEl.classList.add('hidden');
             }
@@ -206,7 +236,7 @@
             grid.innerHTML = data.map((r, index) => `
                 <div onclick="openRecipeModal(${recipes.indexOf(r)})" class="bg-white rounded-xl shadow-sm hover:shadow-md transition border border-coffee-100 overflow-hidden cursor-pointer flex flex-col">
                     <div class="h-48 bg-coffee-100 relative overflow-hidden">
-                        ${r.image ? `<img src="${r.image}" loading="lazy" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-3xl">☕</div>`}
+                        ${r.image ? `<img src="${r.image}" loading="lazy" decoding="async" onerror="this.style.display='none'" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-3xl">☕</div>`}
                         <span class="absolute top-2 left-2 bg-coffee-900/80 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-sm font-medium">${r.category || 'Recipe'}</span>
                     </div>
                     <div class="p-4 flex flex-col flex-grow">
@@ -230,7 +260,7 @@
 
             const modal = document.getElementById('recipeModal');
             const content = document.getElementById('modalContent');
-            const stepsList = r.steps ? r.steps.split('\n').filter(s => s.trim() !== '') : [];
+            const stepsList = r.steps ? r.steps.split('\n').map(s => s.replace(/^\s*\d+[.)]\s*/, '').trim()).filter(s => s !== '') : [];
 
             content.innerHTML = `
                 <div class="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row border border-coffee-200">
