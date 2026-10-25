@@ -1,36 +1,106 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Master BRC - Live Barista Recipe & Cost Viewer</title>
-    <!-- Custom Browser Tab Icon (Favicon) -->
+    
+    <!-- Custom Browser Tab Icon & PWA Manifest -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
+    <meta name="theme-color" content="#3c2817">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Master BRC">
+
+    <!-- Fonts for the printed recipe card -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Instrument+Sans:wght@400..700&display=swap" rel="stylesheet">
+
+    <!-- PDF tools (used by the Download PDF button) -->
+    <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
                         coffee: {
                             50: '#fdf8f6',
                             100: '#f2e8e5',
+                            200: '#e5d1ca',
                             600: '#8c6239',
                             700: '#6f4e37',
                             800: '#5c4033',
                             900: '#3c2817',
+                            950: '#23160b'
                         }
                     }
                 }
             }
         }
     </script>
+    <style>
+        @page { size: A4 landscape; margin: 0; }
+
+        /* ===== Printed recipe card (your original design) ===== */
+        #printArea { display: none; --esp:#2b1d16; --crema:#e0a846; --ink:#2a211b; --muted:#7d7066; --paper:#fffdf9; --line:#e6dccd; --soft:#b9a791; --rule:#4a362a; --disp:'Bricolage Grotesque','Instrument Sans',system-ui,sans-serif; font-family:'Instrument Sans',system-ui,Arial,sans-serif; color:var(--ink); }
+        #printArea.capturing { display:flex; position:fixed; left:0; top:0; width:1100px; z-index:9998; }
+        #printArea.measuring { display:flex; position:fixed; left:-20000px; top:0; width:1100px; }
+        #printArea * { box-sizing: border-box; }
+        #printArea .pcard { flex:none; width:1040px; min-height:660px; display:flex; background:var(--paper); border:1px solid var(--line); border-radius:22px; overflow:hidden; }
+        #printArea .side { flex:none; width:318px; background:var(--esp); color:#f6ede1; padding:24px; display:flex; flex-direction:column; }
+        #printArea .photo { width:100%; height:300px; border-radius:16px; border:3px solid #fff6ea; background-color:#4a362a; background-size:cover; background-position:center 30%; background-repeat:no-repeat; display:flex; align-items:center; justify-content:center; }
+        #printArea .no-photo { display:flex; flex-direction:column; align-items:center; gap:8px; color:var(--soft); font-size:12px; text-align:center; }
+        #printArea .chip { align-self:flex-start; margin:20px 0 10px; padding:4px 12px; border-radius:999px; background:var(--crema); color:var(--esp); font-size:12px; font-weight:700; }
+        #printArea h1 { margin:0; font-family:var(--disp); font-size:34px; line-height:1.05; font-weight:700; letter-spacing:-.02em; color:#fff6ea; }
+        #printArea .sub { margin:8px 0 0; font-size:15px; color:#cdbba6; }
+        #printArea .facts { margin-top:20px; border-top:1px solid var(--rule); }
+        #printArea .fact { display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:11px 0; border-bottom:1px solid var(--rule); }
+        #printArea .fact span { font-size:13px; color:var(--soft); }
+        #printArea .fact strong { font-size:15px; font-weight:700; color:#fff6ea; text-align:right; }
+        #printArea .cost { margin-top:auto; padding-top:22px; }
+        #printArea .cost small { display:block; font-size:13px; color:var(--soft); margin-bottom:4px; }
+        #printArea .cost b { display:block; font-family:var(--disp); font-size:46px; line-height:1; font-weight:700; color:var(--crema); letter-spacing:-.01em; }
+        #printArea .pricing { display:flex; justify-content:space-between; align-items:baseline; margin-top:10px; font-size:13px; color:var(--soft); }
+        #printArea .pricing b { color:#fff6ea; font-weight:700; font-size:15px; }
+        #printArea .main { flex:1; min-width:0; display:flex; flex-direction:column; gap:26px; padding:30px 38px; }
+        #printArea .sec-ing { flex:none; }
+        #printArea .sec-method { flex:1; display:flex; flex-direction:column; min-height:0; }
+        #printArea h2 { margin:0 0 8px; font-family:var(--disp); font-size:21px; font-weight:700; color:var(--esp); }
+        #printArea .ing { display:flex; align-items:flex-end; gap:10px; padding:10px 0; }
+        #printArea .ing .nm { font-size:15px; line-height:1.3; }
+        #printArea .dots { flex:1; min-width:14px; height:1px; margin-bottom:5px; border-bottom:2px dotted #cdbfaa; }
+        #printArea .q { min-width:70px; text-align:right; font-size:15px; color:var(--muted); white-space:nowrap; }
+        #printArea .q b { color:var(--ink); font-weight:700; }
+        #printArea .c { min-width:78px; text-align:right; font-size:15px; font-weight:700; white-space:nowrap; }
+        #printArea .ing.hd { padding:6px 0 5px; border-bottom:1px solid var(--ink); align-items:center; }
+        #printArea .ing.hd span { font-size:12px; font-weight:500; color:var(--muted); }
+        #printArea .steps { flex:1; list-style:none; margin:0; padding:0; display:flex; flex-direction:column; }
+        #printArea .steps li { flex:1 1 auto; display:flex; gap:14px; }
+        #printArea .steps li:last-child { flex:0 0 auto; }
+        #printArea .bcol { display:flex; flex-direction:column; align-items:center; }
+        #printArea .n { flex:none; width:28px; height:28px; border-radius:50%; background:var(--esp); color:#fff6ea; font-size:13px; font-weight:700; text-align:center; line-height:28px; }
+        #printArea .rail { flex:1; width:2px; margin:4px 0; background:#ddd0bd; }
+        #printArea .st { padding:4px 0 14px; font-size:15px; line-height:1.55; }
+        #printArea .steps li:last-child .st { padding-bottom:0; }
+
+        @media print {
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            html, body { background:#fff !important; margin:0 !important; padding:0 !important; min-height:0 !important; height:auto !important; display:block !important; }
+            body > *:not(#printArea) { display:none !important; }
+            #printArea { display:flex !important; position:static !important; align-items:center; justify-content:center; width:297mm; height:209mm; padding:8mm; overflow:hidden; }
+        }
+    </style>
 </head>
-<body class="bg-coffee-50 text-coffee-900 min-h-screen flex flex-col font-sans">
+<body class="bg-coffee-50 dark:bg-coffee-950 text-coffee-900 dark:text-coffee-50 min-h-screen flex flex-col font-sans transition-colors duration-200">
 
     <!-- Top Navigation Bar -->
-    <header class="bg-coffee-900 text-white shadow-md sticky top-0 z-40">
+    <header class="bg-coffee-900 text-white shadow-md sticky top-0 z-40 no-print">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center">
             <div class="flex items-center space-x-3">
                 <div class="bg-coffee-700 p-2 rounded-lg text-xl">☕</div>
@@ -40,9 +110,13 @@
                 </div>
             </div>
             <div class="flex items-center space-x-2 mt-2 sm:mt-0">
+                <span id="updatedAt" class="hidden md:inline text-[11px] text-coffee-200"></span>
                 <span id="syncStatus" class="text-xs bg-amber-500/20 text-amber-300 px-2.5 py-1 rounded-full font-medium flex items-center">
                     <span class="w-2 h-2 rounded-full bg-amber-400 mr-1.5 animate-pulse"></span> Connecting...
                 </span>
+                <button onclick="toggleDarkMode()" id="themeToggleBtn" class="bg-coffee-800 hover:bg-coffee-700 text-white text-xs px-3 py-2 rounded-lg font-medium transition flex items-center">
+                    🌙 Dark
+                </button>
                 <button onclick="syncData()" class="bg-coffee-700 hover:bg-coffee-600 text-white text-xs px-3 py-2 rounded-lg font-medium transition flex items-center">
                     🔄 Sync Sheet
                 </button>
@@ -54,25 +128,38 @@
     </header>
 
     <!-- Main Container -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6">
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 no-print">
         
         <!-- Search & Filter Bar -->
-        <div class="bg-white rounded-xl shadow-sm p-4 mb-6 border border-coffee-100 flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div class="bg-white dark:bg-coffee-900 rounded-xl shadow-sm p-4 mb-6 border border-coffee-100 dark:border-coffee-800 flex flex-col md:flex-row gap-4 justify-between items-center">
             <div class="relative w-full md:w-96">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">🔍</span>
                 <input type="text" id="searchInput" oninput="filterRecipes()" placeholder="Search drinks or ingredients..." 
-                    class="w-full pl-10 pr-4 py-2 bg-coffee-50 border border-coffee-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-coffee-600">
+                    class="w-full pl-10 pr-4 py-2 bg-coffee-50 dark:bg-coffee-800 border border-coffee-100 dark:border-coffee-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-coffee-600 dark:text-white">
             </div>
             <div id="categoryFilters" class="flex flex-wrap gap-2 w-full md:w-auto justify-start md:justify-end">
                 <button onclick="setCategory('ALL')" class="category-btn px-4 py-1.5 rounded-lg text-xs font-semibold bg-coffee-800 text-white transition">ALL</button>
             </div>
         </div>
 
+        <!-- Tools row: hot/iced, sort, menu book -->
+        <div class="flex flex-wrap items-center gap-2 mb-6">
+            <div id="tempFilters" class="flex gap-2"></div>
+            <select id="sortSelect" onchange="setSort(this.value)" class="px-3 py-1.5 bg-white dark:bg-coffee-900 border border-coffee-100 dark:border-coffee-700 rounded-lg text-xs text-coffee-800 dark:text-coffee-100">
+                <option value="default">Sort: sheet order</option>
+                <option value="name">Name A–Z</option>
+                <option value="cost-asc">Cost: low to high</option>
+                <option value="cost-desc">Cost: high to low</option>
+                <option value="price-desc">Price: high to low</option>
+            </select>
+            <button id="bookBtn" onclick="downloadMenuBook()" class="ml-auto bg-coffee-800 hover:bg-coffee-700 text-white text-xs px-3 py-2 rounded-lg font-medium transition">📚 Menu Book PDF</button>
+        </div>
+
         <!-- Big Prominent Loading Banner / Prompt Message -->
-        <div id="loadingState" class="bg-white rounded-2xl shadow-lg border border-coffee-200 p-12 text-center max-w-xl mx-auto my-16">
+        <div id="loadingState" class="bg-white dark:bg-coffee-900 rounded-2xl shadow-lg border border-coffee-200 dark:border-coffee-800 p-12 text-center max-w-xl mx-auto my-16">
             <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-coffee-700 border-t-transparent mb-4"></div>
-            <h2 class="text-2xl font-black text-coffee-900 mb-2">Connecting to Google Sheet API...</h2>
-            <p class="text-sm text-gray-600">Please wait while we fetch the latest recipes, ingredient costs, and photos from your database.</p>
+            <h2 class="text-2xl font-black text-coffee-900 dark:text-white mb-2">Connecting to Google Sheet API...</h2>
+            <p class="text-sm text-gray-600 dark:text-coffee-200">Please wait while we fetch the latest recipes, ingredient costs, and photos from your database.</p>
         </div>
 
         <!-- Recipe Grid -->
@@ -82,28 +169,55 @@
     <!-- Recipe Detail Modal -->
     <div id="recipeModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
         <div class="relative max-w-4xl w-full max-h-[95vh] overflow-y-auto">
-            <button onclick="closeModal()" class="absolute top-3 right-3 z-10 bg-black/50 hover:bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition">✕</button>
+            <button onclick="closeModal()" class="no-print absolute top-3 right-3 z-10 bg-black/50 hover:bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition">✕</button>
             <div id="modalContent"></div>
         </div>
     </div>
 
+    <!-- Access Code Modal -->
+    <div id="lockModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4 no-print">
+        <div class="bg-white dark:bg-coffee-900 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-coffee-100 dark:border-coffee-800">
+            <h2 class="text-lg font-bold text-coffee-900 dark:text-white mb-1">🔒 Access code needed</h2>
+            <p class="text-xs text-gray-600 dark:text-coffee-200 mb-4">Enter the code your manager gave you to view the recipes.</p>
+            <input type="password" id="lockInput" onkeydown="if(event.key==='Enter')submitLock()" autocomplete="off" class="w-full p-2.5 bg-coffee-50 dark:bg-coffee-800 border border-coffee-200 dark:border-coffee-700 dark:text-white rounded-lg text-sm mb-2 focus:ring-2 focus:ring-coffee-600 outline-none">
+            <p id="lockError" class="text-xs text-red-500 mb-3 h-4"></p>
+            <button onclick="submitLock()" class="w-full px-4 py-2 bg-coffee-800 text-white rounded-lg text-xs font-semibold hover:bg-coffee-700">Unlock</button>
+        </div>
+    </div>
+
     <!-- Settings Modal -->
-    <div id="settingsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
-            <button onclick="closeSettings()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 font-bold">✕</button>
-            <h2 class="text-lg font-bold text-coffee-900 mb-2">Google Sheet API Settings</h2>
-            <p class="text-xs text-gray-600 mb-4">Modify the Web App URL if you deploy a new script version.</p>
-            <label class="block text-xs font-semibold text-coffee-800 mb-1">Web App URL:</label>
-            <input type="text" id="apiUrlInput" class="w-full p-2.5 bg-coffee-50 border border-coffee-200 rounded-lg text-xs mb-4 focus:ring-2 focus:ring-coffee-600 outline-none">
+    <div id="settingsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 no-print">
+        <div class="bg-white dark:bg-coffee-900 rounded-2xl shadow-2xl max-w-md w-full p-6 relative border border-coffee-100 dark:border-coffee-800">
+            <button onclick="closeSettings()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white font-bold">✕</button>
+            <h2 class="text-lg font-bold text-coffee-900 dark:text-white mb-2">Google Sheet API Settings</h2>
+            <p class="text-xs text-gray-600 dark:text-coffee-200 mb-4">Modify the Web App URL if you deploy a new script version.</p>
+            <label class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Web App URL:</label>
+            <input type="text" id="apiUrlInput" class="w-full p-2.5 bg-coffee-50 dark:bg-coffee-800 border border-coffee-200 dark:border-coffee-700 dark:text-white rounded-lg text-xs mb-4 focus:ring-2 focus:ring-coffee-600 outline-none">
             <div class="flex justify-end space-x-2">
-                <button onclick="closeSettings()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-200">Cancel</button>
+                <button onclick="closeSettings()" class="px-4 py-2 bg-gray-100 dark:bg-coffee-800 text-gray-700 dark:text-white rounded-lg text-xs font-semibold hover:bg-gray-200">Cancel</button>
                 <button onclick="saveApiUrl()" class="px-4 py-2 bg-coffee-800 text-white rounded-lg text-xs font-semibold hover:bg-coffee-700">Save & Connect</button>
             </div>
         </div>
     </div>
 
+    <!-- Printable recipe card (filled by printRecipe) -->
+    <div id="printArea"></div>
+    <div id="pdfOverlay" class="fixed inset-0 z-[9999] hidden bg-coffee-950/95 flex items-center justify-center no-print">
+        <div class="text-white text-sm font-semibold flex items-center space-x-3">
+            <div class="animate-spin rounded-full h-6 w-6 border-4 border-amber-400 border-t-transparent"></div>
+            <span id="pdfMsg">Creating PDF...</span>
+            <button id="pdfCancel" onclick="cancelBook()" class="hidden ml-4 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Live Toast Notification -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 bg-coffee-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-coffee-700 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center space-x-3 pointer-events-none">
+        <span class="text-lg">✨</span>
+        <span id="toastMessage" class="text-xs font-medium">Sheet synced successfully!</span>
+    </div>
+
     <!-- Footer -->
-    <footer class="bg-coffee-900 text-coffee-200 text-xs py-4 text-center mt-auto">
+    <footer class="bg-coffee-900 text-coffee-200 text-xs py-4 text-center mt-auto no-print">
         Master BRC • Live Barista Recipe & Cost Viewer
     </footer>
 
@@ -112,12 +226,50 @@
         const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbzxKdUrcc1Mdr-u6efKTJt54ireNA8Bm59AVyx1wazY1aMKUstnI2WZhcJ5ZfxSu8iS/exec";
         let recipes = [];
         let activeCategory = 'ALL';
+        let activeTemp = 'ALL';
+        let sortBy = 'default';
+        let visibleRecipes = [];
+        let currentIndex = -1;
+        let multiplier = 1;
         let apiUrl = localStorage.getItem('master_brc_api_url') || DEFAULT_API_URL;
 
         window.onload = function() {
+            // Restore theme
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('themeToggleBtn').innerText = '☀️ Light';
+            }
             document.getElementById('apiUrlInput').value = apiUrl;
+            renderTools();
             fetchRecipes();
         };
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const btn = document.getElementById('themeToggleBtn');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                btn.innerText = '🌙 Dark';
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                btn.innerText = '☀️ Light';
+            }
+        }
+
+        let toastTimer = null;
+        function showToast(message) {
+            const toast = document.getElementById('toastNotification');
+            const msg = document.getElementById('toastMessage');
+            msg.innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3500);
+        }
 
         function openSettings() {
             document.getElementById('settingsModal').classList.remove('hidden');
@@ -138,35 +290,116 @@
         }
 
         function syncData() {
-            fetchRecipes();
+            fetchRecipes(true);
         }
 
-        async function fetchRecipes() {
+        const LS_KEY = 'brc_recipes_v2';
+        let isFetching = false;
+
+        function apiWithKey() {
+            const key = localStorage.getItem('brc_key') || '';
+            if (!key) return apiUrl;
+            return apiUrl + (apiUrl.indexOf('?') >= 0 ? '&' : '?') + 'key=' + encodeURIComponent(key);
+        }
+
+        function setUpdated(ts) {
+            const el = document.getElementById('updatedAt');
+            if (!el || !ts) return;
+            const d = new Date(ts);
+            el.textContent = 'Updated ' + d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ', ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        }
+
+        function handleLocked(wasWrong) {
+            try { localStorage.removeItem(LS_KEY); } catch (e) {}
+            recipes = [];
+            visibleRecipes = [];
+            document.getElementById('recipeGrid').innerHTML = '';
+            document.getElementById('syncStatus').innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500 mr-1.5"></span> Locked';
+            document.getElementById('lockError').textContent = wasWrong ? 'That code is not correct. Try again.' : '';
+            document.getElementById('lockModal').classList.remove('hidden');
+            setTimeout(function () { const i = document.getElementById('lockInput'); i.value = ''; i.focus(); }, 50);
+        }
+
+        function submitLock() {
+            const v = document.getElementById('lockInput').value.trim();
+            if (!v) return;
+            localStorage.setItem('brc_key', v);
+            document.getElementById('lockModal').classList.add('hidden');
+            fetchRecipes(true);
+        }
+
+        // Hide duplicate/copy tabs coming from the sheet
+        function cleanList(list) {
+            return list.filter(r => !/^copy of /i.test(r.sheetName || r.name || ''));
+        }
+
+        async function fetchRecipes(manual = false) {
+            if (isFetching) return;          // ignore double-clicks on Sync
+            isFetching = true;
             const statusEl = document.getElementById('syncStatus');
             const loadingEl = document.getElementById('loadingState');
             const gridEl = document.getElementById('recipeGrid');
-            
-            loadingEl.classList.remove('hidden');
-            gridEl.innerHTML = '';
+
+            // 1) Show last saved data instantly (if any)
+            let hadCache = false;
+            try {
+                const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+                if (saved && Array.isArray(saved.data) && saved.data.length) {
+                    recipes = cleanList(saved.data);
+                    hadCache = true;
+                    setUpdated(saved.updated);
+                    buildCategories();
+                    renderTools();
+                    filterRecipes();
+                    loadingEl.classList.add('hidden');
+                }
+            } catch (e) {}
+
+            if (!hadCache) {
+                loadingEl.classList.remove('hidden');
+                gridEl.innerHTML = '';
+            }
             statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 mr-1.5 animate-ping"></span> Syncing...`;
 
+            // 2) Refresh in the background; only re-render if something changed
             try {
-                const response = await fetch(apiUrl);
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), 30000);   // give up after 30s
+                const response = await fetch(apiWithKey(), { signal: ctrl.signal });
+                clearTimeout(timer);
                 const result = await response.json();
-                
+
+                if (result.status === 'locked') {
+                    handleLocked(!!localStorage.getItem('brc_key'));
+                    return;
+                }
+
                 if (result.status === 'success' && Array.isArray(result.data)) {
-                    recipes = result.data;
+                    const fresh = cleanList(result.data);
+                    const changed = JSON.stringify(fresh) !== JSON.stringify(recipes);
+                    recipes = fresh;
+                    setUpdated(result.updated);
+                    try { localStorage.setItem(LS_KEY, JSON.stringify({ data: result.data, updated: result.updated })); } catch (e) {}
                     statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5"></span> Live Connected (${recipes.length} recipes)`;
-                    buildCategories();
-                    renderGrid(recipes);
+                    if (changed || !hadCache) {
+                        buildCategories();
+                        renderTools();
+                        filterRecipes();
+                    }
+                    if (manual || changed || !hadCache) {
+                        showToast(`✨ Live Connected: Loaded ${recipes.length} recipes from Google Sheet`);
+                    }
                 } else {
                     throw new Error(result.message || 'Invalid data format');
                 }
             } catch (err) {
                 console.error(err);
-                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500 mr-1.5"></span> Connection Error`;
-                gridEl.innerHTML = `<div class="col-span-full text-center py-12 text-red-500 text-sm font-semibold">Failed to sync recipes from Google Sheet. Please check your network or API URL.</div>`;
+                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500 mr-1.5"></span> ${hadCache ? 'Offline (showing saved data)' : 'Connection Error'}`;
+                if (!hadCache) {
+                    gridEl.innerHTML = `<div class="col-span-full text-center py-12 text-red-500 text-sm font-semibold">Failed to sync recipes from Google Sheet. Please check your network or API URL.</div>`;
+                }
             } finally {
+                isFetching = false;
                 loadingEl.classList.add('hidden');
             }
         }
@@ -175,8 +408,8 @@
             const cats = ['ALL', ...new Set(recipes.map(r => r.category).filter(Boolean))];
             const container = document.getElementById('categoryFilters');
             container.innerHTML = cats.map(cat => `
-                <button onclick="setCategory('${cat}')" class="category-btn px-4 py-1.5 rounded-lg text-xs font-semibold transition ${activeCategory === cat ? 'bg-coffee-800 text-white' : 'bg-coffee-100 text-coffee-800 hover:bg-coffee-200'}">
-                    ${cat}
+                <button data-cat="${esc(cat)}" onclick="setCategory(this.dataset.cat)" class="category-btn px-4 py-1.5 rounded-lg text-xs font-semibold transition ${activeCategory === cat ? 'bg-coffee-800 text-white' : 'bg-coffee-100 dark:bg-coffee-800 text-coffee-800 dark:text-coffee-100 hover:bg-coffee-200'}">
+                    ${esc(cat)}
                 </button>
             `).join('');
         }
@@ -187,71 +420,492 @@
             filterRecipes();
         }
 
+        function parseMoney(v) {
+            const n = parseFloat(String(v == null ? '' : v).replace(/[^\d.\-]/g, ''));
+            return isNaN(n) ? null : n;
+        }
+
+        function tempOf(r) {
+            const t = (String(r.name || '') + ' ' + String(r.servingSize || '')).toUpperCase();
+            if (/\bICED?\b/.test(t)) return 'ICED';
+            if (/\bHOT\b/.test(t)) return 'HOT';
+            return 'OTHER';
+        }
+
+        function renderTools() {
+            const box = document.getElementById('tempFilters');
+            if (!box) return;
+            box.innerHTML = ['ALL', 'HOT', 'ICED'].map(function (t) {
+                const label = t === 'ALL' ? 'Hot & Iced' : (t === 'HOT' ? '🔥 Hot' : '🧊 Iced');
+                const on = activeTemp === t;
+                return `<button onclick="setTemp('${t}')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition ${on ? 'bg-coffee-800 text-white' : 'bg-coffee-100 dark:bg-coffee-800 text-coffee-800 dark:text-coffee-100 hover:bg-coffee-200'}">${label}</button>`;
+            }).join('');
+        }
+        function setTemp(t) { activeTemp = t; renderTools(); filterRecipes(); }
+        function setSort(v) { sortBy = v; filterRecipes(); }
+
         function filterRecipes() {
             const query = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = recipes.filter(r => {
+            let list = recipes.filter(r => {
                 const matchesCat = activeCategory === 'ALL' || r.category === activeCategory;
+                const matchesTemp = activeTemp === 'ALL' || tempOf(r) === activeTemp;
                 const matchesSearch = (r.name && r.name.toLowerCase().includes(query)) ||
                                       (r.ingredients && r.ingredients.some(i => i.item.toLowerCase().includes(query)));
-                return matchesCat && matchesSearch;
+                return matchesCat && matchesTemp && matchesSearch;
             });
-            renderGrid(filtered);
+            const num = function (v) { const n = parseMoney(v); return n == null ? 0 : n; };
+            if (sortBy === 'name') list.sort((a, b) => displayName(a).localeCompare(displayName(b)));
+            else if (sortBy === 'cost-asc') list.sort((a, b) => num(a.totalCost) - num(b.totalCost));
+            else if (sortBy === 'cost-desc') list.sort((a, b) => num(b.totalCost) - num(a.totalCost));
+            else if (sortBy === 'price-desc') list.sort((a, b) => num(b.price) - num(a.price));
+            visibleRecipes = list;
+            const btn = document.getElementById('bookBtn');
+            if (btn) btn.textContent = '📚 Menu Book PDF (' + list.length + ')';
+            renderGrid(list);
         }
 
         function renderGrid(data) {
             const grid = document.getElementById('recipeGrid');
             if (data.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500 text-sm">No recipes found matching your search.</div>`;
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500 dark:text-gray-400 text-sm">No recipes found matching your search.</div>`;
                 return;
             }
 
             grid.innerHTML = data.map((r, index) => `
-                <div onclick="openRecipeModal(${recipes.indexOf(r)})" class="bg-white rounded-xl shadow-sm hover:shadow-md transition border border-coffee-100 overflow-hidden cursor-pointer flex flex-col">
-                    <div class="h-48 bg-coffee-100 relative overflow-hidden">
-                        ${r.image ? `<img src="${r.image}" loading="lazy" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-3xl">☕</div>`}
-                        <span class="absolute top-2 left-2 bg-coffee-900/80 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-sm font-medium">${r.category || 'Recipe'}</span>
+                <div role="button" tabindex="0" onclick="openRecipeModal(${recipes.indexOf(r)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openRecipeModal(${recipes.indexOf(r)})}" class="bg-white dark:bg-coffee-900 rounded-xl shadow-sm hover:shadow-md transition border border-coffee-100 dark:border-coffee-800 overflow-hidden cursor-pointer flex flex-col">
+                    <div class="h-48 bg-coffee-100 dark:bg-coffee-800 relative overflow-hidden">
+                        ${r.image ? `<img src="${esc(r.image)}" alt="${esc(displayName(r))}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-3xl">☕</div>`}
+                        <span class="absolute top-2 left-2 bg-coffee-900/80 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-sm font-medium">${esc(r.category || 'Recipe')}</span>
                     </div>
                     <div class="p-4 flex flex-col flex-grow">
-                        <h3 class="font-bold text-coffee-900 text-sm mb-1">${r.name || 'Untitled Drink'}</h3>
-                        <div class="flex items-center text-xs text-gray-500 space-x-3 mb-3">
-                            <span>🥤 ${r.servingSize || 'Standard'}</span>
-                            <span>⏱️ ${r.prepTime ? r.prepTime + ' mins' : '3 mins'}</span>
+                        <h3 class="font-bold text-coffee-900 dark:text-white text-sm mb-1">${esc(displayName(r)) || 'Untitled Drink'}</h3>
+                        <div class="flex items-center text-xs text-gray-500 dark:text-coffee-200 space-x-3 mb-3">
+                            <span>🥤 ${esc(r.servingSize || 'Standard')}</span>
+                            <span>⏱️ ${esc(fmtTime(r.prepTime, '3 mins'))}</span>
                         </div>
-                        <div class="mt-auto pt-2 border-t border-coffee-50 flex justify-between items-center text-xs">
-                            <span class="text-gray-500">Total Cost</span>
-                            <span class="font-bold text-coffee-800 text-sm">${r.totalCost || 'P0.00'}</span>
+                        <div class="mt-auto pt-2 border-t border-coffee-50 dark:border-coffee-800 text-xs">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-500 dark:text-coffee-200">Total Cost</span>
+                                <span class="font-bold text-coffee-800 dark:text-amber-300 text-sm">${esc(money(r.totalCost || 'P0.00'))}</span>
+                            </div>
+                            ${r.price ? `<div class="flex justify-between items-center mt-1"><span class="text-gray-500 dark:text-coffee-200">Suggested price</span><span class="font-semibold text-emerald-700 dark:text-emerald-300">${esc(money(r.price))}</span></div>` : ''}
                         </div>
                     </div>
                 </div>
             `).join('');
         }
 
-        function openRecipeModal(index) {
-            const r = recipes[index];
+        // ---------- Text helpers (match the original card design) ----------
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+        // ALL CAPS -> Title Case
+        function tidy(s) {
+            s = String(s == null ? '' : s);
+            if (s !== '' && s === s.toUpperCase()) {
+                s = s.toLowerCase().replace(/(^|[\s(\/-])([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); });
+                s = s.replace(/Longbeach/g, 'LongBeach');
+            }
+            return s;
+        }
+        // ALL CAPS -> Sentence case
+        function sent(s) {
+            s = String(s == null ? '' : s);
+            if (s !== '' && s === s.toUpperCase()) {
+                s = s.toLowerCase().replace(/(^|[.!?]\s+)([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); });
+                s = s.replace(/°c/g, '°C').replace(/°f/g, '°F');
+                s = s.replace(/\blongbeach\b/gi, 'LongBeach').replace(/\bmilcasa\b/gi, 'Milcasa');
+            }
+            return s;
+        }
+        function money(s) { return String(s == null ? '' : s).replace(/^P/, '₱'); }
+        function qty(s) {
+            s = String(s == null ? '' : s).trim();
+            const m = s.match(/^([\d.,]+)\s*(.*)$/);
+            if (!m) return { n: s, u: '' };
+            return { n: m[1], u: m[2].toLowerCase() };
+        }
+        function fmtAmt(s) { const q = qty(s); return (q.n + ' ' + q.u).trim(); }
+        function fmtTime(t, fallback) {
+            t = String(t == null ? '' : t).trim();
+            if (!t) return fallback === undefined ? '-' : fallback;
+            return /[a-z]/i.test(t) ? t : t + ' mins';
+        }
+        function nameParts(r) {
+            const parts = String(r.name || '').split(/\s+-\s+/);
+            return { title: tidy(parts[0]), subtitle: tidy(parts.slice(1).join(' - ')) };
+        }
+        function displayName(r) {
+            const n = nameParts(r);
+            return n.title + (n.subtitle ? ' - ' + n.subtitle : '');
+        }
+        function stepsOf(r) {
+            return String(r.steps || '').split(/\r?\n/)
+                .map(function (s) { return s.replace(/^\s*\d+[.)]\s*/, '').trim(); })
+                .filter(function (s) { return s.length > 0; });
+        }
+
+        // ---------- Batch size (multiplier) ----------
+        function fmtNum(n) { return String(Math.round(n * 100) / 100); }
+        function peso(n) { return 'P' + n.toFixed(2); }
+
+        function scaledRecipe(r, m) {
+            if (!r) return r;
+            if (!m || m === 1) return Object.assign({}, r, { batch: 1 });
+            const c = Object.assign({}, r, { batch: m });
+            c.ingredients = (r.ingredients || []).map(function (i) {
+                const q = qty(i.amount);
+                const n = parseFloat(String(q.n).replace(/,/g, ''));
+                const cost = parseMoney(i.cost);
+                return Object.assign({}, i, {
+                    amount: isNaN(n) ? i.amount : (fmtNum(n * m) + ' ' + q.u).trim(),
+                    cost: cost == null ? i.cost : peso(cost * m)
+                });
+            });
+            ['totalCost', 'price', 'margin'].forEach(function (k) {
+                const v = parseMoney(r[k]);
+                if (v != null) c[k] = peso(v * m);
+            });
+            c.steps = String(r.steps || '').replace(/(\d+(?:\.\d+)?)(\s?)(g|ml)\b/gi, function (x, n, sp, u) {
+                return fmtNum(parseFloat(n) * m) + sp + u;
+            });
+            return c;
+        }
+
+        function batchControlsHtml() {
+            const presets = [1, 2, 5, 10];
+            const btn = function (m) {
+                const on = multiplier === m;
+                return `<button onclick="setMultiplier(${m})" class="px-3 py-1 rounded-lg text-xs font-bold transition ${on ? 'bg-coffee-900 text-white dark:bg-amber-500 dark:text-coffee-950' : 'bg-coffee-100 dark:bg-coffee-800 text-coffee-800 dark:text-coffee-100 hover:bg-coffee-200'}">×${m}</button>`;
+            };
+            const custom = presets.indexOf(multiplier) >= 0 ? '' : multiplier;
+            return `<div class="no-print mb-5 flex flex-wrap items-center gap-2 text-xs">
+                <span class="font-semibold text-gray-500 dark:text-coffee-200 mr-1">Batch size</span>
+                ${presets.map(btn).join('')}
+                <input type="number" min="0.5" max="100" step="0.5" value="${custom}" placeholder="custom" onchange="setMultiplier(this.value)" class="w-20 px-2 py-1 rounded-lg border border-coffee-200 dark:border-coffee-700 bg-white dark:bg-coffee-800 dark:text-white text-xs">
+            </div>${multiplier !== 1 ? `<p class="no-print -mt-3 mb-4 text-[11px] text-amber-700 dark:text-amber-300">Showing a ×${multiplier} batch: ingredient amounts, costs, and the g/ml amounts in the method are scaled.</p>` : ''}`;
+        }
+
+        function setMultiplier(v) {
+            let m = parseFloat(v);
+            if (!isFinite(m) || m <= 0) m = 1;
+            multiplier = Math.min(100, m);
+            renderModal();
+        }
+
+        // ---------- Print / Save PDF (original card design) ----------
+        let currentRecipe = null;
+        let printState = null;
+
+        function buildPrintCard(r) {
+            const n = nameParts(r);
+            const steps = stepsOf(r);
+            const ings = r.ingredients || [];
+            const photo = r.image
+                ? `<div class="photo" style="background-image:url('${String(r.image).replace(/'/g, '%27')}')"></div>`
+                : `<div class="photo"><div class="no-photo"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#e0a846" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3c0 1.2 1 1.2 1 2.4M12 3c0 1.2 1 1.2 1 2.4"/></svg><div>No photo yet</div></div></div>`;
+
+            const ingRows = ings.map(function (i) {
+                const q = qty(i.amount);
+                return `<div class="ing"><span class="nm">${esc(tidy(i.item))}</span><span class="dots"></span><span class="q"><b>${esc(q.n)}</b> ${esc(q.u)}</span><span class="c">${esc(money(i.cost))}</span></div>`;
+            }).join('');
+
+            const stepRows = steps.map(function (st, j) {
+                return `<li><div class="bcol"><span class="n">${j + 1}</span>${j < steps.length - 1 ? '<i class="rail"></i>' : ''}</div><div class="st">${esc(sent(st))}</div></li>`;
+            }).join('');
+
+            return `
+            <div class="pcard">
+              <aside class="side">
+                ${photo}
+                ${(r.category || r.batch > 1) ? `<span class="chip">${esc(r.category || '')}${r.batch > 1 ? (r.category ? ' · ' : '') + 'Batch ×' + r.batch : ''}</span>` : ''}
+                <h1>${esc(n.title)}</h1>
+                ${n.subtitle ? `<p class="sub">${esc(n.subtitle)}</p>` : ''}
+                <div class="facts">
+                  <div class="fact"><span>Serving size</span><strong>${esc(r.servingSize || '-')}</strong></div>
+                  <div class="fact"><span>Prep time</span><strong>${esc(fmtTime(r.prepTime))}</strong></div>
+                  <div class="fact"><span>Ingredients</span><strong>${ings.length} ${ings.length === 1 ? 'item' : 'items'}</strong></div>
+                </div>
+                <div class="cost"><small>Total cost</small><b>${esc(money(r.totalCost))}</b></div>
+                ${r.price ? `<div class="pricing"><span>Suggested price</span><b>${esc(money(r.price))}</b></div>` : ''}
+                ${r.margin ? `<div class="pricing" style="margin-top:4px"><span>Gross margin</span><b>${esc(money(r.margin))}</b></div>` : ''}
+              </aside>
+              <div class="main">
+                <div class="sec-ing">
+                  <h2>Ingredients</h2>
+                  <div class="ing hd"><span class="nm">Item</span><span class="dots" style="border:none"></span><span class="q">Usage</span><span class="c">Cost</span></div>
+                  ${ingRows}
+                </div>
+                ${steps.length ? `<div class="sec-method"><h2>Method</h2><ol class="steps">${stepRows}</ol></div>` : ''}
+              </div>
+            </div>`;
+        }
+
+        function printRecipe() {
+            const r = scaledRecipe(currentRecipe, multiplier);
             if (!r) return;
+            const area = document.getElementById('printArea');
+            area.innerHTML = buildPrintCard(r);
+            const card = area.querySelector('.pcard');
+            const photo = area.querySelector('.photo');
+
+            printState = { title: document.title };
+            document.title = (displayName(r) || 'Recipe') + (r.batch > 1 ? ' x' + r.batch : '');
+            area.classList.add('measuring');
+
+            const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+            // Give the photo box the same shape as the photo so nothing is cut off
+            const photoReady = new Promise(function (resolve) {
+                if (!r.image) return resolve();
+                const im = new Image();
+                im.onload = function () {
+                    const h = Math.round(270 * im.naturalHeight / im.naturalWidth);
+                    photo.style.height = Math.max(210, Math.min(380, h)) + 'px';
+                    resolve();
+                };
+                im.onerror = resolve;
+                im.src = r.image;
+            });
+
+            Promise.all([fontsReady, photoReady]).then(function () {
+                const PAGE_W = 1062, PAGE_H = 725;   // A4 landscape minus 8mm margins, in CSS px
+                const z = Math.min(PAGE_W / 1040, PAGE_H / card.offsetHeight);
+                card.style.zoom = z;
+                area.classList.remove('measuring');
+                setTimeout(function () { window.print(); }, 80);
+            });
+        }
+
+        // ---------- Download PDF (no browser header/footer) ----------
+        // The card is drawn by the browser itself (same result as Print), then placed on an A4 page.
+        let fontCssCache = null;
+
+        function blobToDataUrl(blob) {
+            return new Promise(function (resolve, reject) {
+                const fr = new FileReader();
+                fr.onload = function () { resolve(fr.result); };
+                fr.onerror = reject;
+                fr.readAsDataURL(blob);
+            });
+        }
+
+        // Download the two Google fonts once and keep them as data so they are drawn in the PDF
+        async function getFontEmbedCss() {
+            if (fontCssCache !== null) return fontCssCache;
+            try {
+                const link = document.querySelector('link[href*="fonts.googleapis.com/css2"]');
+                if (!link) throw new Error('font stylesheet not found');
+                const css = await (await fetch(link.href)).text();
+                const blocks = css.split('/* ').filter(function (b) { return /^(latin|latin-ext)\s*\*\//.test(b); });
+                let out = '';
+                for (const b of blocks) {
+                    const m = b.match(/url\((https:[^)]+)\)/);
+                    if (!m) continue;
+                    const dataUrl = await blobToDataUrl(await (await fetch(m[1])).blob());
+                    out += '/* ' + b.replace(m[1], dataUrl);
+                }
+                fontCssCache = out;
+            } catch (e) {
+                console.warn('Font embedding skipped:', e);
+                fontCssCache = '';
+            }
+            return fontCssCache;
+        }
+
+        const photoCache = {};
+        let safariWarmed = false;
+        let bookCancelled = false;
+
+        // Draw one recipe card with the browser and return it as a canvas
+        async function renderCardCanvas(r, pixelRatio) {
+            const area = document.getElementById('printArea');
+            area.innerHTML = buildPrintCard(r);
+            area.classList.add('capturing');
+            const card = area.querySelector('.pcard');
+            const photo = area.querySelector('.photo');
+            let photoSkipped = false;
+
+            if (r.image) {
+                try {
+                    if (!photoCache[r.image]) {
+                        const res = await fetch(r.image, { referrerPolicy: 'no-referrer' });
+                        if (!res.ok) throw new Error('HTTP ' + res.status);
+                        photoCache[r.image] = await blobToDataUrl(await res.blob());
+                    }
+                    const dataUrl = photoCache[r.image];
+                    await new Promise(function (resolve) {
+                        const im = new Image();
+                        im.onload = function () {
+                            const h = Math.round(270 * im.naturalHeight / im.naturalWidth);
+                            photo.style.height = Math.max(210, Math.min(380, h)) + 'px';
+                            resolve();
+                        };
+                        im.onerror = resolve;
+                        im.src = dataUrl;
+                    });
+                    photo.style.backgroundImage = "url('" + dataUrl + "')";
+                } catch (e) {
+                    console.warn('Photo skipped in PDF:', e);
+                    photo.style.backgroundImage = 'none';
+                    photoSkipped = true;
+                }
+            }
+
+            if (document.fonts && document.fonts.ready) await document.fonts.ready;
+            const fontCss = await getFontEmbedCss();
+            const opts = { pixelRatio: pixelRatio, backgroundColor: '#ffffff', cacheBust: false };
+            if (fontCss) opts.fontEmbedCSS = fontCss;
+
+            // Safari draws blank on the first try, so do one warm-up pass there
+            if (!safariWarmed && /^((?!chrome|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent)) {
+                try { await window.htmlToImage.toCanvas(card, opts); } catch (e) {}
+            }
+            safariWarmed = true;
+
+            const canvas = await window.htmlToImage.toCanvas(card, opts);
+            return { canvas: canvas, photoSkipped: photoSkipped };
+        }
+
+        function addCanvasPage(pdf, canvas, isFirst, quality) {
+            if (!isFirst) pdf.addPage();
+            const pageW = pdf.internal.pageSize.getWidth();
+            const pageH = pdf.internal.pageSize.getHeight();
+            const margin = 8;
+            const maxW = pageW - margin * 2, maxH = pageH - margin * 2;
+            const ratio = canvas.width / canvas.height;
+            let w = maxW, h = w / ratio;
+            if (h > maxH) { h = maxH; w = h * ratio; }
+            pdf.addImage(canvas.toDataURL('image/jpeg', quality), 'JPEG', (pageW - w) / 2, (pageH - h) / 2, w, h);
+        }
+
+        function pdfToolsReady() {
+            if (!window.htmlToImage || !window.jspdf) {
+                showToast('⚠️ PDF tools did not load. Check your internet and try again.');
+                return false;
+            }
+            return true;
+        }
+
+        function endCapture() {
+            const area = document.getElementById('printArea');
+            area.classList.remove('capturing');
+            area.innerHTML = '';
+            document.getElementById('pdfOverlay').classList.add('hidden');
+            document.getElementById('pdfCancel').classList.add('hidden');
+        }
+
+        async function downloadPdf() {
+            if (!currentRecipe || !pdfToolsReady()) return;
+            const r = scaledRecipe(currentRecipe, multiplier);
+            const scrollY = window.scrollY;
+            document.getElementById('pdfMsg').textContent = 'Creating PDF...';
+            document.getElementById('pdfOverlay').classList.remove('hidden');
+            window.scrollTo(0, 0);
+            try {
+                const isPhone = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+                const out = await renderCardCanvas(r, isPhone ? 2 : 3);
+                const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+                addCanvasPage(pdf, out.canvas, true, 0.95);
+                const fileName = ((displayName(r) || 'Recipe') + (r.batch > 1 ? ' x' + r.batch : '')).replace(/[\\\/:*?"<>|]/g, '-') + '.pdf';
+                pdf.save(fileName);
+                showToast(out.photoSkipped ? '📄 PDF saved (without photo — the browser blocked it). Use Print for a copy with the photo.' : '📄 PDF downloaded');
+            } catch (err) {
+                console.error(err);
+                showToast('⚠️ Could not create the PDF: ' + (err && err.message ? err.message : err));
+            } finally {
+                endCapture();
+                window.scrollTo(0, scrollY);
+            }
+        }
+
+        function cancelBook() { bookCancelled = true; }
+
+        // One PDF with every recipe currently shown (respects search, category, hot/iced, and sort)
+        async function downloadMenuBook() {
+            const list = visibleRecipes.slice();
+            if (!list.length || !pdfToolsReady()) return;
+            if (list.length > 15 && !confirm('This will build a ' + list.length + '-page PDF. It can take a minute or two. Continue?')) return;
+
+            bookCancelled = false;
+            const msg = document.getElementById('pdfMsg');
+            const scrollY = window.scrollY;
+            document.getElementById('pdfCancel').classList.remove('hidden');
+            document.getElementById('pdfOverlay').classList.remove('hidden');
+            window.scrollTo(0, 0);
+
+            let skipped = 0, done = 0;
+            try {
+                const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+                for (let i = 0; i < list.length; i++) {
+                    if (bookCancelled) break;
+                    msg.textContent = 'Creating menu book... ' + (i + 1) + ' of ' + list.length;
+                    const out = await renderCardCanvas(scaledRecipe(list[i], 1), 2);
+                    addCanvasPage(pdf, out.canvas, done === 0, 0.9);
+                    if (out.photoSkipped) skipped++;
+                    done++;
+                    const area = document.getElementById('printArea');
+                    area.classList.remove('capturing');
+                    area.innerHTML = '';
+                    await new Promise(function (res) { setTimeout(res, 0); });   // let the page breathe
+                }
+                if (bookCancelled || done === 0) {
+                    showToast('Menu book cancelled');
+                } else {
+                    pdf.save('Master BRC Menu Book (' + done + ' recipes).pdf');
+                    showToast(skipped ? '📚 Menu book saved (' + skipped + ' without photo)' : '📚 Menu book downloaded');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('⚠️ Could not create the menu book: ' + (err && err.message ? err.message : err));
+            } finally {
+                endCapture();
+                window.scrollTo(0, scrollY);
+            }
+        }
+
+        function restoreAfterPrint() {
+            const area = document.getElementById('printArea');
+            if (area) { area.classList.remove('measuring'); area.innerHTML = ''; }
+            if (printState) { document.title = printState.title; printState = null; }
+        }
+        window.addEventListener('afterprint', restoreAfterPrint);
+
+        function openRecipeModal(index) {
+            const r0 = recipes[index];
+            if (!r0) return;
+            currentIndex = index;
+            currentRecipe = r0;
+            multiplier = 1;
+            renderModal();
+        }
+
+        function renderModal() {
+            const r = scaledRecipe(currentRecipe, multiplier);
 
             const modal = document.getElementById('recipeModal');
             const content = document.getElementById('modalContent');
-            const stepsList = r.steps ? r.steps.split('\n').filter(s => s.trim() !== '') : [];
+            const stepsList = r.steps ? r.steps.split('\n').map(s => s.replace(/^\s*\d+[.)]\s*/, '').trim()).filter(s => s !== '') : [];
 
             content.innerHTML = `
-                <div class="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row border border-coffee-200">
+                <div class="bg-white dark:bg-coffee-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row border border-coffee-200 dark:border-coffee-800">
+                    
+                    <!-- Left Dark Brown Sidebar Panel -->
                     <div class="w-full md:w-5/12 bg-coffee-900 text-white p-6 flex flex-col justify-between">
                         <div>
-                            <div class="rounded-xl overflow-hidden shadow-md h-64 bg-coffee-800 border-2 border-white/10 mb-5">
-                                ${r.image ? `<img src="${r.image}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-4xl">☕</div>`}
+                            <div class="rounded-xl overflow-hidden shadow-md h-64 bg-coffee-800 border-2 border-white/10 mb-4">
+                                ${r.image ? `<img src="${esc(r.image)}" alt="${esc(displayName(r))}" referrerpolicy="no-referrer" onerror="this.style.display='none'" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-4xl">☕</div>`}
                             </div>
-                            <span class="inline-block bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider mb-2">${r.category || 'Basic Coffee'}</span>
-                            <h2 class="text-2xl font-black text-white leading-tight mb-4">${r.name || 'Recipe'}</h2>
+                            <span class="inline-block bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider mb-2">${esc(r.category || 'Basic Coffee')}</span>
+                            <h2 class="text-2xl font-black text-white leading-tight mb-4">${esc(displayName(r)) || 'Recipe'}</h2>
 
                             <div class="space-y-3 text-xs border-t border-white/15 pt-4">
                                 <div class="flex justify-between items-center pb-2 border-b border-white/10">
                                     <span class="text-coffee-200">Serving size</span>
-                                    <span class="font-bold text-white">${r.servingSize || 'N/A'}</span>
+                                    <span class="font-bold text-white">${esc(r.servingSize || 'N/A')}</span>
                                 </div>
                                 <div class="flex justify-between items-center pb-2 border-b border-white/10">
                                     <span class="text-coffee-200">Prep time</span>
-                                    <span class="font-bold text-white">${r.prepTime ? r.prepTime + ' mins' : 'N/A'}</span>
+                                    <span class="font-bold text-white">${esc(fmtTime(r.prepTime, 'N/A'))}</span>
                                 </div>
                                 <div class="flex justify-between items-center pb-2 border-b border-white/10">
                                     <span class="text-coffee-200">Ingredients</span>
@@ -260,31 +914,47 @@
                             </div>
                         </div>
 
-                        <div class="mt-8 pt-4 border-t border-white/15 flex justify-between items-end">
-                            <span class="text-xs text-coffee-200 font-medium">Total cost</span>
-                            <span class="text-2xl font-black text-amber-300">${r.totalCost || 'P0.00'}</span>
+                        <div>
+                            <div class="mt-6 pt-4 border-t border-white/15 flex justify-between items-end mb-4">
+                                <span class="text-xs text-coffee-200 font-medium">Total cost${r.batch > 1 ? ' (×' + r.batch + ')' : ''}</span>
+                                <span class="text-2xl font-black text-amber-300">${esc(money(r.totalCost || 'P0.00'))}</span>
+                            </div>
+                            ${(r.price || r.margin) ? `<div class="mb-4 space-y-1 text-xs">
+                                ${r.price ? `<div class="flex justify-between"><span class="text-coffee-200">Suggested price (30% cost)</span><b class="text-white">${esc(money(r.price))}</b></div>` : ''}
+                                ${r.margin ? `<div class="flex justify-between"><span class="text-coffee-200">Gross margin</span><b class="text-white">${esc(money(r.margin))}</b></div>` : ''}
+                            </div>` : ''}
+                            <div class="no-print grid grid-cols-2 gap-2">
+                                <button onclick="downloadPdf()" class="bg-amber-500 hover:bg-amber-600 text-coffee-950 font-bold text-xs py-2.5 px-3 rounded-xl transition shadow flex items-center justify-center space-x-1.5">
+                                    <span>⬇️</span><span>Download PDF</span>
+                                </button>
+                                <button onclick="printRecipe()" class="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs py-2.5 px-3 rounded-xl transition flex items-center justify-center space-x-1.5">
+                                    <span>🖨️</span><span>Print</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="w-full md:w-7/12 p-6 md:p-8 bg-white flex flex-col justify-between">
+                    <!-- Right Content Panel -->
+                    <div class="w-full md:w-7/12 p-6 md:p-8 bg-white dark:bg-coffee-900 text-coffee-900 dark:text-white flex flex-col justify-between">
                         <div>
+                            ${batchControlsHtml()}
                             <div class="mb-6">
-                                <h3 class="text-sm font-bold text-coffee-900 mb-3 tracking-wide">Ingredients</h3>
+                                <h3 class="text-sm font-bold text-coffee-900 dark:text-white mb-3 tracking-wide">Ingredients</h3>
                                 <div class="text-xs">
-                                    <div class="flex justify-between font-bold text-gray-500 pb-2 border-b border-gray-300">
+                                    <div class="flex justify-between font-bold text-gray-500 dark:text-coffee-200 pb-2 border-b border-gray-300 dark:border-coffee-700">
                                         <span>Item</span>
                                         <div class="flex space-x-10">
                                             <span>Usage</span>
                                             <span>Cost</span>
                                         </div>
                                     </div>
-                                    <div class="divide-y divide-dashed divide-gray-200">
+                                    <div class="divide-y divide-dashed divide-gray-200 dark:divide-coffee-800">
                                         ${r.ingredients && r.ingredients.length > 0 ? r.ingredients.map(i => `
                                             <div class="py-2.5 flex justify-between items-center">
-                                                <span class="font-medium text-coffee-900 pr-2">${i.item}</span>
+                                                <span class="font-medium text-coffee-900 dark:text-coffee-50 pr-2">${esc(tidy(i.item))}</span>
                                                 <div class="flex space-x-6 text-right flex-shrink-0">
-                                                    <span class="text-gray-600 w-12">${i.amount}</span>
-                                                    <span class="font-semibold text-coffee-800 w-14">${i.cost}</span>
+                                                    <span class="text-gray-600 dark:text-coffee-200 w-12">${esc(fmtAmt(i.amount))}</span>
+                                                    <span class="font-semibold text-coffee-800 dark:text-amber-300 w-14">${esc(money(i.cost))}</span>
                                                 </div>
                                             </div>
                                         `).join('') : `<div class="py-3 text-gray-400 italic">No ingredients listed</div>`}
@@ -293,12 +963,12 @@
                             </div>
 
                             <div>
-                                <h3 class="text-sm font-bold text-coffee-900 mb-3 tracking-wide">Method</h3>
+                                <h3 class="text-sm font-bold text-coffee-900 dark:text-white mb-3 tracking-wide">Method</h3>
                                 <div class="space-y-3">
                                     ${stepsList.length > 0 ? stepsList.map((step, idx) => `
                                         <div class="flex items-start text-xs">
-                                            <span class="bg-coffee-900 text-white w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] flex-shrink-0 mr-3 mt-0.5">${idx + 1}</span>
-                                            <span class="text-gray-700 leading-relaxed">${step}</span>
+                                            <span class="bg-coffee-900 text-white dark:bg-amber-500 dark:text-coffee-950 w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] flex-shrink-0 mr-3 mt-0.5">${idx + 1}</span>
+                                            <span class="text-gray-700 dark:text-coffee-100 leading-relaxed">${esc(sent(step))}</span>
                                         </div>
                                     `).join('') : `<p class="text-xs text-gray-500 italic">No preparation steps listed.</p>`}
                                 </div>
@@ -309,11 +979,17 @@
             `;
 
             modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
         }
 
         function closeModal() {
             document.getElementById('recipeModal').classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
         }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { closeModal(); closeSettings(); }
+        });
 
         window.onclick = function(event) {
             const modal = document.getElementById('recipeModal');
