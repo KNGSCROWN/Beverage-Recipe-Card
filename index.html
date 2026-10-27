@@ -237,6 +237,38 @@
         let multiplier = 1;
         let apiUrl = localStorage.getItem('master_brc_api_url') || DEFAULT_API_URL;
 
+        // How long the access code is remembered:
+        //   'never'  = ask for the code again after every reload (safest)
+        //   'tab'    = remembered until the browser tab is closed
+        //   'device' = remembered on this device until the browser data is cleared
+        const REMEMBER_CODE = 'never';
+        let memoryKey = '';
+        function getKey() {
+            if (REMEMBER_CODE === 'device') return localStorage.getItem('brc_key') || '';
+            if (REMEMBER_CODE === 'tab') return sessionStorage.getItem('brc_key') || '';
+            return memoryKey;
+        }
+        function setKey(v) {
+            memoryKey = v;
+            try {
+                if (REMEMBER_CODE === 'device') localStorage.setItem('brc_key', v);
+                else if (REMEMBER_CODE === 'tab') sessionStorage.setItem('brc_key', v);
+            } catch (e) {}
+        }
+        function clearKey() {
+            memoryKey = '';
+            try { localStorage.removeItem('brc_key'); sessionStorage.removeItem('brc_key'); } catch (e) {}
+        }
+        // Remove a code or locked recipes saved by an earlier version of this page
+        if (REMEMBER_CODE !== 'device') {
+            try { localStorage.removeItem('brc_key'); } catch (e) {}
+            try {
+                const old = JSON.parse(localStorage.getItem('brc_recipes_v2') || 'null');
+                if (old && old.pub !== true) localStorage.removeItem('brc_recipes_v2');
+            } catch (e) {}
+        }
+        if (REMEMBER_CODE === 'never') { try { sessionStorage.removeItem('brc_key'); } catch (e) {} }
+
         window.onload = function() {
             // Restore theme
             const savedTheme = localStorage.getItem('theme');
@@ -301,7 +333,7 @@
         let isFetching = false;
 
         function apiWithKey() {
-            const key = localStorage.getItem('brc_key') || '';
+            const key = getKey();
             if (!key) return apiUrl;
             return apiUrl + (apiUrl.indexOf('?') >= 0 ? '&' : '?') + 'key=' + encodeURIComponent(key);
         }
@@ -337,7 +369,7 @@
         function submitLock() {
             const v = document.getElementById('lockInput').value.trim();
             if (!v) return;
-            localStorage.setItem('brc_key', v);
+            setKey(v);
             document.getElementById('lockModal').classList.add('hidden');
             fetchRecipes(true);
         }
@@ -358,7 +390,7 @@
             let hadCache = false;
             try {
                 const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
-                if (saved && Array.isArray(saved.data) && saved.data.length) {
+                if (saved && Array.isArray(saved.data) && saved.data.length && (REMEMBER_CODE === 'device' || saved.pub === true)) {
                     recipes = cleanList(saved.data);
                     lockedCats = Array.isArray(saved.locked) ? saved.locked : [];
                     hadCache = true;
@@ -385,7 +417,7 @@
                 const result = await response.json();
 
                 if (result.status === 'locked') {
-                    handleLocked(!!localStorage.getItem('brc_key'));
+                    handleLocked(!!getKey());
                     return;
                 }
 
@@ -397,11 +429,17 @@
                     recipes = fresh;
                     lockedCats = freshLocked;
                     setUpdated(result.updated);
-                    try { localStorage.setItem(LS_KEY, JSON.stringify({ data: result.data, locked: freshLocked, updated: result.updated })); } catch (e) {}
+                    try {
+                        if (REMEMBER_CODE === 'device' || result.unlocked === false) {
+                            localStorage.setItem(LS_KEY, JSON.stringify({ data: result.data, locked: freshLocked, updated: result.updated, pub: result.unlocked === false }));
+                        } else {
+                            localStorage.removeItem(LS_KEY);      // never keep locked recipes on this device
+                        }
+                    } catch (e) {}
                     const lockedTotal = freshLocked.reduce((n, c) => n + (c.count || 0), 0);
                     statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5"></span> Live Connected (${recipes.length} recipes${lockedTotal ? ' · ' + lockedTotal + ' locked' : ''})`;
                     if (result.wrongKey) {
-                        try { localStorage.removeItem('brc_key'); } catch (e) {}
+                        clearKey();
                         openLock('That code is not correct. Try again.');
                     }
                     if (changed || !hadCache) {
