@@ -177,11 +177,14 @@
     <!-- Access Code Modal -->
     <div id="lockModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4 no-print">
         <div class="bg-white dark:bg-coffee-900 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-coffee-100 dark:border-coffee-800">
-            <h2 class="text-lg font-bold text-coffee-900 dark:text-white mb-1">🔒 Access code needed</h2>
-            <p class="text-xs text-gray-600 dark:text-coffee-200 mb-4">Enter the code your manager gave you to view the recipes.</p>
+            <h2 class="text-lg font-bold text-coffee-900 dark:text-white mb-1">🔒 Locked categories</h2>
+            <p class="text-xs text-gray-600 dark:text-coffee-200 mb-4">Enter the access code to view the locked recipes.</p>
             <input type="password" id="lockInput" onkeydown="if(event.key==='Enter')submitLock()" autocomplete="off" class="w-full p-2.5 bg-coffee-50 dark:bg-coffee-800 border border-coffee-200 dark:border-coffee-700 dark:text-white rounded-lg text-sm mb-2 focus:ring-2 focus:ring-coffee-600 outline-none">
             <p id="lockError" class="text-xs text-red-500 mb-3 h-4"></p>
-            <button onclick="submitLock()" class="w-full px-4 py-2 bg-coffee-800 text-white rounded-lg text-xs font-semibold hover:bg-coffee-700">Unlock</button>
+            <div class="flex gap-2">
+                <button onclick="closeLock()" class="flex-1 px-4 py-2 bg-coffee-100 dark:bg-coffee-800 text-coffee-800 dark:text-coffee-100 rounded-lg text-xs font-semibold hover:bg-coffee-200">Not now</button>
+                <button onclick="submitLock()" class="flex-1 px-4 py-2 bg-coffee-800 text-white rounded-lg text-xs font-semibold hover:bg-coffee-700">Unlock</button>
+            </div>
         </div>
     </div>
 
@@ -229,6 +232,7 @@
         let activeTemp = 'ALL';
         let sortBy = 'default';
         let visibleRecipes = [];
+        let lockedCats = [];
         let currentIndex = -1;
         let multiplier = 1;
         let apiUrl = localStorage.getItem('master_brc_api_url') || DEFAULT_API_URL;
@@ -320,6 +324,16 @@
             setTimeout(function () { const i = document.getElementById('lockInput'); i.value = ''; i.focus(); }, 50);
         }
 
+        function openLock(msg) {
+            document.getElementById('lockError').textContent = msg || '';
+            document.getElementById('lockModal').classList.remove('hidden');
+            setTimeout(function () { const i = document.getElementById('lockInput'); i.value = ''; i.focus(); }, 50);
+        }
+
+        function closeLock() {
+            document.getElementById('lockModal').classList.add('hidden');
+        }
+
         function submitLock() {
             const v = document.getElementById('lockInput').value.trim();
             if (!v) return;
@@ -346,6 +360,7 @@
                 const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
                 if (saved && Array.isArray(saved.data) && saved.data.length) {
                     recipes = cleanList(saved.data);
+                    lockedCats = Array.isArray(saved.locked) ? saved.locked : [];
                     hadCache = true;
                     setUpdated(saved.updated);
                     buildCategories();
@@ -376,11 +391,19 @@
 
                 if (result.status === 'success' && Array.isArray(result.data)) {
                     const fresh = cleanList(result.data);
-                    const changed = JSON.stringify(fresh) !== JSON.stringify(recipes);
+                    const freshLocked = Array.isArray(result.locked) ? result.locked : [];
+                    const changed = JSON.stringify(fresh) !== JSON.stringify(recipes) ||
+                                    JSON.stringify(freshLocked) !== JSON.stringify(lockedCats);
                     recipes = fresh;
+                    lockedCats = freshLocked;
                     setUpdated(result.updated);
-                    try { localStorage.setItem(LS_KEY, JSON.stringify({ data: result.data, updated: result.updated })); } catch (e) {}
-                    statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5"></span> Live Connected (${recipes.length} recipes)`;
+                    try { localStorage.setItem(LS_KEY, JSON.stringify({ data: result.data, locked: freshLocked, updated: result.updated })); } catch (e) {}
+                    const lockedTotal = freshLocked.reduce((n, c) => n + (c.count || 0), 0);
+                    statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5"></span> Live Connected (${recipes.length} recipes${lockedTotal ? ' · ' + lockedTotal + ' locked' : ''})`;
+                    if (result.wrongKey) {
+                        try { localStorage.removeItem('brc_key'); } catch (e) {}
+                        openLock('That code is not correct. Try again.');
+                    }
                     if (changed || !hadCache) {
                         buildCategories();
                         renderTools();
@@ -406,12 +429,19 @@
 
         function buildCategories() {
             const cats = ['ALL', ...new Set(recipes.map(r => r.category).filter(Boolean))];
+            if (!cats.includes(activeCategory)) activeCategory = 'ALL';
             const container = document.getElementById('categoryFilters');
-            container.innerHTML = cats.map(cat => `
+            const open = cats.map(cat => `
                 <button data-cat="${esc(cat)}" onclick="setCategory(this.dataset.cat)" class="category-btn px-4 py-1.5 rounded-lg text-xs font-semibold transition ${activeCategory === cat ? 'bg-coffee-800 text-white' : 'bg-coffee-100 dark:bg-coffee-800 text-coffee-800 dark:text-coffee-100 hover:bg-coffee-200'}">
                     ${esc(cat)}
                 </button>
             `).join('');
+            const locked = lockedCats.map(c => `
+                <button onclick="openLock('')" title="Enter the access code to view" class="category-btn px-4 py-1.5 rounded-lg text-xs font-semibold transition bg-coffee-100/60 dark:bg-coffee-800/60 text-coffee-800/70 dark:text-coffee-100/70 border border-dashed border-coffee-300 dark:border-coffee-700 hover:bg-coffee-200">
+                    🔒 ${esc(c.name)}${c.count ? ' (' + c.count + ')' : ''}
+                </button>
+            `).join('');
+            container.innerHTML = open + locked;
         }
 
         function setCategory(cat) {
