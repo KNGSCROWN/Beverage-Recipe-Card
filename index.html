@@ -241,7 +241,7 @@
         //   'never'  = ask for the code again after every reload (safest)
         //   'tab'    = remembered until the browser tab is closed
         //   'device' = remembered on this device until the browser data is cleared
-        const REMEMBER_CODE = 'tab';
+        const REMEMBER_CODE = 'never';
         let memoryKey = '';
         function getKey() {
             if (REMEMBER_CODE === 'device') return localStorage.getItem('brc_key') || '';
