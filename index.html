@@ -95,74 +95,142 @@
             body > *:not(#printArea) { display:none !important; }
             #printArea { display:flex !important; position:static !important; align-items:center; justify-content:center; width:297mm; height:209mm; padding:8mm; overflow:hidden; }
         }
+        /* ===== Page styling (everything except the recipe card) ===== */
+        body { font-family:'Instrument Sans',system-ui,-apple-system,'Segoe UI',Arial,sans-serif; }
+        .font-display { font-family:'Bricolage Grotesque','Instrument Sans',system-ui,sans-serif; letter-spacing:-.01em; }
+        body.page-bg {
+            background-image:
+                radial-gradient(900px 420px at 90% -8%, rgba(224,168,70,.16), transparent 60%),
+                radial-gradient(800px 380px at -8% 4%, rgba(140,98,57,.12), transparent 60%);
+            background-attachment: fixed;
+        }
+        .dark body.page-bg {
+            background-image:
+                radial-gradient(900px 420px at 90% -8%, rgba(224,168,70,.09), transparent 60%),
+                radial-gradient(800px 380px at -8% 4%, rgba(140,98,57,.14), transparent 60%);
+        }
+
+        .site-header { background:linear-gradient(100deg,#23160b 0%,#3c2817 55%,#5c4033 100%); border-bottom:1px solid rgba(224,168,70,.22); box-shadow:0 8px 30px -14px rgba(35,22,11,.7); }
+        .logo-tile { background:linear-gradient(145deg,#f4cb78,#e0a846); box-shadow:inset 0 1px 0 rgba(255,255,255,.55), 0 6px 14px -6px rgba(224,168,70,.8); }
+        .hdr-btn { display:inline-flex; align-items:center; gap:.35rem; padding:.5rem .9rem; border-radius:999px; font-size:.75rem; font-weight:600; color:#fff; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); transition:background .2s, transform .15s; }
+        .hdr-btn:hover { background:rgba(255,255,255,.17); }
+        .hdr-btn:active { transform:scale(.97); }
+        .hdr-btn-primary { background:#e0a846; color:#23160b; border-color:#e0a846; }
+        .hdr-btn-primary:hover { background:#edb95a; }
+
+        .panel { background:#fff; border:1px solid #f2e8e5; border-radius:1.25rem; box-shadow:0 1px 2px rgba(60,40,23,.04), 0 12px 32px -20px rgba(60,40,23,.3); }
+        .dark .panel { background:#3c2817; border-color:#5c4033; box-shadow:0 12px 32px -20px rgba(0,0,0,.6); }
+
+        .pill { padding:.4rem .95rem; border-radius:999px; font-size:.75rem; font-weight:600; border:1px solid #e5d1ca; background:#fff; color:#5c4033; transition:all .18s; }
+        .pill:hover { border-color:#8c6239; color:#3c2817; }
+        .pill-on { background:#3c2817; color:#fff; border-color:#3c2817; }
+        .pill-on:hover { color:#fff; }
+        .pill-locked { border-style:dashed; opacity:.85; }
+        .dark .pill { background:#23160b; border-color:#5c4033; color:#f2e8e5; }
+        .dark .pill:hover { border-color:#e0a846; color:#fff; }
+        .dark .pill-on { background:#e0a846; color:#23160b; border-color:#e0a846; }
+        .dark .pill-on:hover { color:#23160b; }
+
+        .seg { display:inline-flex; gap:.15rem; padding:.25rem; border-radius:999px; background:#f2e8e5; }
+        .dark .seg { background:#23160b; }
+        .seg-btn { padding:.4rem .9rem; border-radius:999px; font-size:.75rem; font-weight:600; color:#5c4033; transition:all .18s; }
+        .seg-btn:hover { color:#3c2817; }
+        .seg-btn.on { background:#fff; color:#3c2817; box-shadow:0 1px 3px rgba(60,40,23,.22); }
+        .dark .seg-btn { color:#e5d1ca; }
+        .dark .seg-btn.on { background:#e0a846; color:#23160b; box-shadow:none; }
+
+        .sel { appearance:none; -webkit-appearance:none; padding:.55rem 2.2rem .55rem 1rem; border-radius:999px; font-size:.75rem; font-weight:600; border:1px solid #e5d1ca; color:#5c4033; cursor:pointer;
+            background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235c4033' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right .85rem center; }
+        .dark .sel { background-color:#3c2817; border-color:#5c4033; color:#f2e8e5;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23e5d1ca' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
+        .btn-solid { padding:.55rem 1.1rem; border-radius:999px; font-size:.75rem; font-weight:700; background:#3c2817; color:#fff; transition:background .2s, transform .15s; box-shadow:0 8px 18px -10px rgba(60,40,23,.7); }
+        .btn-solid:hover { background:#5c4033; }
+        .btn-solid:active { transform:scale(.97); }
+        .dark .btn-solid { background:#e0a846; color:#23160b; box-shadow:none; }
+        .dark .btn-solid:hover { background:#edb95a; }
+
+        .count-pill { font-family:'Instrument Sans',system-ui,sans-serif; letter-spacing:0; font-size:.8rem; font-weight:700; padding:.3rem .85rem; border-radius:999px; color:#8c6239; background:rgba(224,168,70,.18); border:1px solid rgba(224,168,70,.5); white-space:nowrap; }
+        .count-pill:empty { display:none; }
+        .dark .count-pill { color:#f0c36d; background:rgba(224,168,70,.14); border-color:rgba(224,168,70,.4); }
+        .recipe-card { box-shadow:0 1px 2px rgba(60,40,23,.05); transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease; animation:cardIn .3s ease both; }
+        .recipe-card:hover { transform:translateY(-4px); box-shadow:0 22px 40px -20px rgba(60,40,23,.5); border-color:#e0a846; }
+        .recipe-card:focus-visible { outline:2px solid #e0a846; outline-offset:3px; }
+        .recipe-card img { transition:transform .5s ease; }
+        .recipe-card:hover img { transform:scale(1.06); }
+        .meta-chip { display:inline-flex; align-items:center; gap:.25rem; padding:.2rem .6rem; border-radius:999px; background:#f7efec; color:#5c4033; font-weight:500; }
+        .dark .meta-chip { background:rgba(255,255,255,.08); color:#e5d1ca; }
+        @keyframes cardIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+        @media (prefers-reduced-motion: reduce) { .recipe-card, .recipe-card img { animation:none; transition:none; } }
     </style>
 </head>
-<body class="bg-coffee-50 dark:bg-coffee-950 text-coffee-900 dark:text-coffee-50 min-h-screen flex flex-col font-sans transition-colors duration-200">
+<body class="page-bg bg-coffee-50 dark:bg-coffee-950 text-coffee-900 dark:text-coffee-50 min-h-screen flex flex-col transition-colors duration-200">
 
     <!-- Top Navigation Bar -->
-    <header class="bg-coffee-900 text-white shadow-md sticky top-0 z-40 no-print">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <div class="bg-coffee-700 p-2 rounded-lg text-xl">☕</div>
-                <div>
-                    <h1 class="text-lg font-bold tracking-wide">Master BRC</h1>
-                    <p class="text-xs text-coffee-200">Live Barista Recipe & Cost Viewer</p>
+    <header class="site-header sticky top-0 z-40 text-white no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap justify-between items-center gap-x-4 gap-y-3">
+            <div class="flex items-center gap-3">
+                <div class="logo-tile w-11 h-11 rounded-2xl flex items-center justify-center text-xl">☕</div>
+                <div class="leading-tight">
+                    <h1 class="font-display text-xl font-bold tracking-tight">Master BRC</h1>
+                    <p class="text-[11px] text-coffee-200/80 tracking-wide">Live Barista Recipe & Cost Viewer</p>
                 </div>
             </div>
-            <div class="flex items-center space-x-2 mt-2 sm:mt-0">
-                <span id="updatedAt" class="hidden md:inline text-[11px] text-coffee-200"></span>
-                <span id="syncStatus" class="text-xs bg-amber-500/20 text-amber-300 px-2.5 py-1 rounded-full font-medium flex items-center">
+            <div class="flex flex-wrap items-center gap-2">
+                <span id="updatedAt" class="hidden md:inline text-[11px] text-coffee-200/70 mr-1"></span>
+                <span id="syncStatus" class="text-xs bg-amber-500/15 text-amber-300 border border-amber-400/20 px-3 py-1.5 rounded-full font-medium flex items-center">
                     <span class="w-2 h-2 rounded-full bg-amber-400 mr-1.5 animate-pulse"></span> Connecting...
                 </span>
-                <button onclick="toggleDarkMode()" id="themeToggleBtn" class="bg-coffee-800 hover:bg-coffee-700 text-white text-xs px-3 py-2 rounded-lg font-medium transition flex items-center">
-                    🌙 Dark
-                </button>
-                <button onclick="syncData()" class="bg-coffee-700 hover:bg-coffee-600 text-white text-xs px-3 py-2 rounded-lg font-medium transition flex items-center">
-                    🔄 Sync Sheet
-                </button>
-                <button onclick="openSettings()" class="bg-coffee-800 hover:bg-coffee-700 text-white text-xs px-3 py-2 rounded-lg font-medium transition flex items-center">
-                    ⚙️ Settings
-                </button>
+                <button onclick="toggleDarkMode()" id="themeToggleBtn" class="hdr-btn">🌙 Dark</button>
+                <button onclick="syncData()" class="hdr-btn hdr-btn-primary">🔄 Sync Sheet</button>
+                <button onclick="openSettings()" class="hdr-btn">⚙️ Settings</button>
             </div>
         </div>
     </header>
 
     <!-- Main Container -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 no-print">
-        
-        <!-- Search & Filter Bar -->
-        <div class="bg-white dark:bg-coffee-900 rounded-xl shadow-sm p-4 mb-6 border border-coffee-100 dark:border-coffee-800 flex flex-col md:flex-row gap-4 justify-between items-center">
-            <div class="relative w-full md:w-96">
-                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">🔍</span>
-                <input type="text" id="searchInput" oninput="filterRecipes()" placeholder="Search drinks or ingredients..." 
-                    class="w-full pl-10 pr-4 py-2 bg-coffee-50 dark:bg-coffee-800 border border-coffee-100 dark:border-coffee-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-coffee-600 dark:text-white">
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 no-print">
+
+        <!-- Page intro -->
+        <div class="flex flex-wrap items-end justify-between gap-3 mb-6">
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-[.2em] text-coffee-600 dark:text-amber-300 mb-1">Recipe library</p>
+                <h2 class="font-display text-3xl sm:text-4xl font-bold tracking-tight text-coffee-900 dark:text-white flex flex-wrap items-center gap-x-4 gap-y-2">What are we making? <span id="resultCount" class="count-pill"></span></h2>
             </div>
-            <div id="categoryFilters" class="flex flex-wrap gap-2 w-full md:w-auto justify-start md:justify-end">
-                <button onclick="setCategory('ALL')" class="category-btn px-4 py-1.5 rounded-lg text-xs font-semibold bg-coffee-800 text-white transition">ALL</button>
+        </div>
+
+        <!-- Search & Filter Bar -->
+        <div class="panel p-3 sm:p-4 mb-4 flex flex-col gap-3">
+            <div class="relative w-full">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-coffee-600 dark:text-coffee-200">🔍</span>
+                <input type="text" id="searchInput" oninput="filterRecipes()" placeholder="Search drinks or ingredients..."
+                    class="w-full pl-11 pr-4 py-3 bg-coffee-50 dark:bg-coffee-950/60 border border-coffee-100 dark:border-coffee-800 rounded-xl text-sm placeholder-coffee-700/50 dark:placeholder-coffee-200/40 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:text-white">
+            </div>
+            <div id="categoryFilters" class="flex flex-wrap gap-2">
+                <button onclick="setCategory('ALL')" class="category-btn pill pill-on">ALL</button>
             </div>
         </div>
 
         <!-- Tools row: hot/iced, sort, menu book -->
-        <div class="flex flex-wrap items-center gap-2 mb-6">
-            <div id="tempFilters" class="flex gap-2"></div>
-            <select id="sortSelect" onchange="setSort(this.value)" class="px-3 py-1.5 bg-white dark:bg-coffee-900 border border-coffee-100 dark:border-coffee-700 rounded-lg text-xs text-coffee-800 dark:text-coffee-100">
+        <div class="flex flex-wrap items-center gap-3 mb-7">
+            <div id="tempFilters" class="seg"></div>
+            <select id="sortSelect" onchange="setSort(this.value)" class="sel">
                 <option value="default">Sort: sheet order</option>
                 <option value="name">Name A–Z</option>
                 <option value="cost-asc">Cost: low to high</option>
                 <option value="cost-desc">Cost: high to low</option>
                 <option value="price-desc">Price: high to low</option>
             </select>
-            <button id="bookBtn" onclick="downloadMenuBook()" class="ml-auto bg-coffee-800 hover:bg-coffee-700 text-white text-xs px-3 py-2 rounded-lg font-medium transition">📚 Menu Book PDF</button>
+            <button id="bookBtn" onclick="downloadMenuBook()" class="ml-auto btn-solid">📚 Menu Book PDF</button>
         </div>
 
-        <!-- Big Prominent Loading Banner / Prompt Message -->
-        <div id="loadingState" class="bg-white dark:bg-coffee-900 rounded-2xl shadow-lg border border-coffee-200 dark:border-coffee-800 p-12 text-center max-w-xl mx-auto my-16">
-            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-coffee-700 border-t-transparent mb-4"></div>
-            <h2 class="text-2xl font-black text-coffee-900 dark:text-white mb-2">Connecting to Google Sheet API...</h2>
+        <!-- Loading banner -->
+        <div id="loadingState" class="panel p-12 text-center max-w-xl mx-auto my-16">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-coffee-700 dark:border-amber-400 border-t-transparent mb-5"></div>
+            <h2 class="font-display text-2xl font-bold text-coffee-900 dark:text-white mb-2">Connecting to Google Sheet API...</h2>
             <p class="text-sm text-gray-600 dark:text-coffee-200">Please wait while we fetch the latest recipes, ingredient costs, and photos from your database.</p>
         </div>
 
-        <!-- Recipe Grid -->
+    <!-- Recipe Grid -->
         <div id="recipeGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
     </main>
 
@@ -176,29 +244,29 @@
 
     <!-- Access Code Modal -->
     <div id="lockModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4 no-print">
-        <div class="bg-white dark:bg-coffee-900 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-coffee-100 dark:border-coffee-800">
-            <h2 class="text-lg font-bold text-coffee-900 dark:text-white mb-1">🔒 Locked categories</h2>
+        <div class="bg-white dark:bg-coffee-900 rounded-3xl shadow-2xl max-w-sm w-full p-7 border border-coffee-100 dark:border-coffee-800">
+            <h2 class="font-display text-xl font-bold text-coffee-900 dark:text-white mb-1">🔒 Locked categories</h2>
             <p class="text-xs text-gray-600 dark:text-coffee-200 mb-4">Enter the access code to view the locked recipes.</p>
-            <input type="password" id="lockInput" onkeydown="if(event.key==='Enter')submitLock()" autocomplete="off" class="w-full p-2.5 bg-coffee-50 dark:bg-coffee-800 border border-coffee-200 dark:border-coffee-700 dark:text-white rounded-lg text-sm mb-2 focus:ring-2 focus:ring-coffee-600 outline-none">
+            <input type="password" id="lockInput" onkeydown="if(event.key==='Enter')submitLock()" autocomplete="off" class="w-full px-4 py-3 bg-coffee-50 dark:bg-coffee-800 border border-coffee-200 dark:border-coffee-700 dark:text-white rounded-xl text-sm mb-2 focus:ring-2 focus:ring-amber-400 outline-none">
             <p id="lockError" class="text-xs text-red-500 mb-3 h-4"></p>
             <div class="flex gap-2">
-                <button onclick="closeLock()" class="flex-1 px-4 py-2 bg-coffee-100 dark:bg-coffee-800 text-coffee-800 dark:text-coffee-100 rounded-lg text-xs font-semibold hover:bg-coffee-200">Not now</button>
-                <button onclick="submitLock()" class="flex-1 px-4 py-2 bg-coffee-800 text-white rounded-lg text-xs font-semibold hover:bg-coffee-700">Unlock</button>
+                <button onclick="closeLock()" class="flex-1 px-4 py-2.5 bg-coffee-100 dark:bg-coffee-800 text-coffee-800 dark:text-coffee-100 rounded-full text-xs font-semibold hover:bg-coffee-200 dark:hover:bg-coffee-700 transition">Not now</button>
+                <button onclick="submitLock()" class="flex-1 btn-solid">Unlock</button>
             </div>
         </div>
     </div>
 
     <!-- Settings Modal -->
     <div id="settingsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 no-print">
-        <div class="bg-white dark:bg-coffee-900 rounded-2xl shadow-2xl max-w-md w-full p-6 relative border border-coffee-100 dark:border-coffee-800">
-            <button onclick="closeSettings()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white font-bold">✕</button>
-            <h2 class="text-lg font-bold text-coffee-900 dark:text-white mb-2">Google Sheet API Settings</h2>
+        <div class="bg-white dark:bg-coffee-900 rounded-3xl shadow-2xl max-w-md w-full p-7 relative border border-coffee-100 dark:border-coffee-800">
+            <button onclick="closeSettings()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-white font-bold">✕</button>
+            <h2 class="font-display text-xl font-bold text-coffee-900 dark:text-white mb-2">Google Sheet API Settings</h2>
             <p class="text-xs text-gray-600 dark:text-coffee-200 mb-4">Modify the Web App URL if you deploy a new script version.</p>
             <label class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Web App URL:</label>
-            <input type="text" id="apiUrlInput" class="w-full p-2.5 bg-coffee-50 dark:bg-coffee-800 border border-coffee-200 dark:border-coffee-700 dark:text-white rounded-lg text-xs mb-4 focus:ring-2 focus:ring-coffee-600 outline-none">
+            <input type="text" id="apiUrlInput" class="w-full px-4 py-3 bg-coffee-50 dark:bg-coffee-800 border border-coffee-200 dark:border-coffee-700 dark:text-white rounded-xl text-xs mb-4 focus:ring-2 focus:ring-amber-400 outline-none">
             <div class="flex justify-end space-x-2">
-                <button onclick="closeSettings()" class="px-4 py-2 bg-gray-100 dark:bg-coffee-800 text-gray-700 dark:text-white rounded-lg text-xs font-semibold hover:bg-gray-200">Cancel</button>
-                <button onclick="saveApiUrl()" class="px-4 py-2 bg-coffee-800 text-white rounded-lg text-xs font-semibold hover:bg-coffee-700">Save & Connect</button>
+                <button onclick="closeSettings()" class="px-4 py-2.5 bg-gray-100 dark:bg-coffee-800 text-gray-700 dark:text-white rounded-full text-xs font-semibold hover:bg-gray-200 dark:hover:bg-coffee-700 transition">Cancel</button>
+                <button onclick="saveApiUrl()" class="btn-solid">Save & Connect</button>
             </div>
         </div>
     </div>
@@ -214,14 +282,14 @@
     </div>
 
     <!-- Live Toast Notification -->
-    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 bg-coffee-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-coffee-700 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center space-x-3 pointer-events-none">
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 bg-coffee-900 text-white px-5 py-3 rounded-full shadow-2xl border border-amber-400/30 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center space-x-3 pointer-events-none">
         <span class="text-lg">✨</span>
         <span id="toastMessage" class="text-xs font-medium">Sheet synced successfully!</span>
     </div>
 
     <!-- Footer -->
-    <footer class="bg-coffee-900 text-coffee-200 text-xs py-4 text-center mt-auto no-print">
-        Master BRC • Live Barista Recipe & Cost Viewer
+    <footer class="text-coffee-700/70 dark:text-coffee-200/60 text-xs py-8 text-center mt-auto no-print border-t border-coffee-100 dark:border-coffee-800">
+        <span class="font-display font-bold text-coffee-800 dark:text-coffee-100">Master BRC</span> <span class="mx-1">•</span> Live Barista Recipe & Cost Viewer
     </footer>
 
     <!-- JavaScript Application Logic -->
@@ -350,6 +418,7 @@
             recipes = [];
             visibleRecipes = [];
             document.getElementById('recipeGrid').innerHTML = '';
+            const rcl = document.getElementById('resultCount'); if (rcl) rcl.textContent = '';
             document.getElementById('syncStatus').innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500 mr-1.5"></span> Locked';
             document.getElementById('lockError').textContent = wasWrong ? 'That code is not correct. Try again.' : '';
             document.getElementById('lockModal').classList.remove('hidden');
@@ -470,12 +539,12 @@
             if (!cats.includes(activeCategory)) activeCategory = 'ALL';
             const container = document.getElementById('categoryFilters');
             const open = cats.map(cat => `
-                <button data-cat="${esc(cat)}" onclick="setCategory(this.dataset.cat)" class="category-btn px-4 py-1.5 rounded-lg text-xs font-semibold transition ${activeCategory === cat ? 'bg-coffee-800 text-white' : 'bg-coffee-100 dark:bg-coffee-800 text-coffee-800 dark:text-coffee-100 hover:bg-coffee-200'}">
+                <button data-cat="${esc(cat)}" onclick="setCategory(this.dataset.cat)" class="category-btn pill ${activeCategory === cat ? 'pill-on' : ''}">
                     ${esc(cat)}
                 </button>
             `).join('');
             const locked = lockedCats.map(c => `
-                <button onclick="openLock('')" title="Enter the access code to view" class="category-btn px-4 py-1.5 rounded-lg text-xs font-semibold transition bg-coffee-100/60 dark:bg-coffee-800/60 text-coffee-800/70 dark:text-coffee-100/70 border border-dashed border-coffee-300 dark:border-coffee-700 hover:bg-coffee-200">
+                <button onclick="openLock('')" title="Enter the access code to view" class="category-btn pill pill-locked">
                     🔒 ${esc(c.name)}${c.count ? ' (' + c.count + ')' : ''}
                 </button>
             `).join('');
@@ -506,7 +575,7 @@
             box.innerHTML = ['ALL', 'HOT', 'ICED'].map(function (t) {
                 const label = t === 'ALL' ? 'Hot & Iced' : (t === 'HOT' ? '🔥 Hot' : '🧊 Iced');
                 const on = activeTemp === t;
-                return `<button onclick="setTemp('${t}')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition ${on ? 'bg-coffee-800 text-white' : 'bg-coffee-100 dark:bg-coffee-800 text-coffee-800 dark:text-coffee-100 hover:bg-coffee-200'}">${label}</button>`;
+                return `<button onclick="setTemp('${t}')" class="seg-btn ${on ? 'on' : ''}">${label}</button>`;
             }).join('');
         }
         function setTemp(t) { activeTemp = t; renderTools(); filterRecipes(); }
@@ -527,6 +596,8 @@
             else if (sortBy === 'cost-desc') list.sort((a, b) => num(b.totalCost) - num(a.totalCost));
             else if (sortBy === 'price-desc') list.sort((a, b) => num(b.price) - num(a.price));
             visibleRecipes = list;
+            const rc = document.getElementById('resultCount');
+            if (rc) rc.textContent = list.length + (list.length === 1 ? ' recipe' : ' recipes');
             const btn = document.getElementById('bookBtn');
             if (btn) btn.textContent = '📚 Menu Book PDF (' + list.length + ')';
             renderGrid(list);
@@ -535,32 +606,40 @@
         function renderGrid(data) {
             const grid = document.getElementById('recipeGrid');
             if (data.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500 dark:text-gray-400 text-sm">No recipes found matching your search.</div>`;
+                grid.innerHTML = `<div class="col-span-full text-center py-16 text-gray-500 dark:text-coffee-200"><div class="text-4xl mb-3">🫗</div><p class="font-display text-lg font-bold text-coffee-900 dark:text-white mb-1">No recipes found</p><p class="text-sm">Try a different search or clear a filter.</p></div>`;
                 return;
             }
 
-            grid.innerHTML = data.map((r, index) => `
-                <div role="button" tabindex="0" onclick="openRecipeModal(${recipes.indexOf(r)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openRecipeModal(${recipes.indexOf(r)})}" class="bg-white dark:bg-coffee-900 rounded-xl shadow-sm hover:shadow-md transition border border-coffee-100 dark:border-coffee-800 overflow-hidden cursor-pointer flex flex-col">
-                    <div class="h-48 bg-coffee-100 dark:bg-coffee-800 relative overflow-hidden">
-                        ${r.image ? `<img src="${esc(r.image)}" alt="${esc(displayName(r))}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-3xl">☕</div>`}
-                        <span class="absolute top-2 left-2 bg-coffee-900/80 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-sm font-medium">${esc(r.category || 'Recipe')}</span>
+            grid.innerHTML = data.map((r, index) => {
+                const t = tempOf(r);
+                const tempChip = t === 'HOT' ? '🔥 Hot' : (t === 'ICED' ? '🧊 Iced' : '');
+                return `
+                <div role="button" tabindex="0" onclick="openRecipeModal(${recipes.indexOf(r)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openRecipeModal(${recipes.indexOf(r)})}" class="recipe-card group bg-white dark:bg-coffee-900 rounded-2xl border border-coffee-100 dark:border-coffee-800 overflow-hidden cursor-pointer flex flex-col">
+                    <div class="h-52 bg-gradient-to-br from-coffee-100 to-coffee-200 dark:from-coffee-800 dark:to-coffee-900 relative overflow-hidden">
+                        ${r.image ? `<img src="${esc(r.image)}" alt="${esc(displayName(r))}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-5xl">☕</div>`}
+                        <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/40 to-transparent pointer-events-none"></div>
+                        <span class="absolute top-3 left-3 bg-white/90 text-coffee-900 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">${esc(r.category || 'Recipe')}</span>
+                        ${tempChip ? `<span class="absolute top-3 right-3 bg-coffee-950/70 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">${tempChip}</span>` : ''}
                     </div>
                     <div class="p-4 flex flex-col flex-grow">
-                        <h3 class="font-bold text-coffee-900 dark:text-white text-sm mb-1">${esc(displayName(r)) || 'Untitled Drink'}</h3>
-                        <div class="flex items-center text-xs text-gray-500 dark:text-coffee-200 space-x-3 mb-3">
-                            <span>🥤 ${esc(r.servingSize || 'Standard')}</span>
-                            <span>⏱️ ${esc(fmtTime(r.prepTime, '3 mins'))}</span>
+                        <h3 class="font-display font-bold text-[17px] leading-snug text-coffee-900 dark:text-white mb-2">${esc(displayName(r)) || 'Untitled Drink'}</h3>
+                        <div class="flex flex-wrap items-center gap-1.5 text-[11px] mb-4">
+                            <span class="meta-chip">🥤 ${esc(r.servingSize || 'Standard')}</span>
+                            <span class="meta-chip">⏱️ ${esc(fmtTime(r.prepTime, '3 mins'))}</span>
                         </div>
-                        <div class="mt-auto pt-2 border-t border-coffee-50 dark:border-coffee-800 text-xs">
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-500 dark:text-coffee-200">Total Cost</span>
-                                <span class="font-bold text-coffee-800 dark:text-amber-300 text-sm">${esc(money(r.totalCost || 'P0.00'))}</span>
+                        <div class="mt-auto pt-3 border-t border-coffee-100 dark:border-coffee-800 flex items-end justify-between gap-3">
+                            <div>
+                                <div class="text-[10px] uppercase tracking-wider font-semibold text-gray-500 dark:text-coffee-200/80">Total cost</div>
+                                <div class="font-display font-bold text-lg text-coffee-800 dark:text-amber-300">${esc(money(r.totalCost || 'P0.00'))}</div>
                             </div>
-                            ${r.price ? `<div class="flex justify-between items-center mt-1"><span class="text-gray-500 dark:text-coffee-200">Suggested price</span><span class="font-semibold text-emerald-700 dark:text-emerald-300">${esc(money(r.price))}</span></div>` : ''}
+                            ${r.price ? `<div class="text-right">
+                                <div class="text-[10px] uppercase tracking-wider font-semibold text-gray-500 dark:text-coffee-200/80">Suggested price</div>
+                                <div class="font-display font-bold text-lg text-emerald-700 dark:text-emerald-300">${esc(money(r.price))}</div>
+                            </div>` : ''}
                         </div>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         }
 
         // ---------- Text helpers (match the original card design) ----------
