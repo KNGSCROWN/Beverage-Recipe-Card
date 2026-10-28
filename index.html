@@ -494,7 +494,6 @@
         }
 
         function tempOf(r) {
-            if (r.temp) return /ice/i.test(r.temp) ? 'ICED' : 'HOT';
             const t = (String(r.name || '') + ' ' + String(r.servingSize || '')).toUpperCase();
             if (/\bICED?\b/.test(t)) return 'ICED';
             if (/\bHOT\b/.test(t)) return 'HOT';
@@ -519,7 +518,6 @@
                 const matchesCat = activeCategory === 'ALL' || r.category === activeCategory;
                 const matchesTemp = activeTemp === 'ALL' || tempOf(r) === activeTemp;
                 const matchesSearch = (r.name && r.name.toLowerCase().includes(query)) ||
-                                      String(r.servingSize || '').toLowerCase().includes(query) ||
                                       (r.ingredients && r.ingredients.some(i => i.item.toLowerCase().includes(query)));
                 return matchesCat && matchesTemp && matchesSearch;
             });
@@ -609,7 +607,6 @@
             const n = nameParts(r);
             return n.title + (n.subtitle ? ' - ' + n.subtitle : '');
         }
-        function fileLabel(r) { return displayName(r) + (r.servingSize ? ' - ' + r.servingSize : ''); }
         function stepsOf(r) {
             return String(r.steps || '').split(/\r?\n/)
                 .map(function (s) { return s.replace(/^\s*\d+[.)]\s*/, '').trim(); })
@@ -721,7 +718,7 @@
             const photo = area.querySelector('.photo');
 
             printState = { title: document.title };
-            document.title = (fileLabel(r) || 'Recipe') + (r.batch > 1 ? ' x' + r.batch : '');
+            document.title = (displayName(r) || 'Recipe') + (r.batch > 1 ? ' x' + r.batch : '');
             area.classList.add('measuring');
 
             const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
@@ -877,7 +874,7 @@
                 const out = await renderCardCanvas(r, isPhone ? 2 : 3);
                 const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
                 addCanvasPage(pdf, out.canvas, true, 0.95);
-                const fileName = ((fileLabel(r) || 'Recipe') + (r.batch > 1 ? ' x' + r.batch : '')).replace(/[\\\/:*?"<>|]/g, '-') + '.pdf';
+                const fileName = ((displayName(r) || 'Recipe') + (r.batch > 1 ? ' x' + r.batch : '')).replace(/[\\\/:*?"<>|]/g, '-') + '.pdf';
                 pdf.save(fileName);
                 showToast(out.photoSkipped ? '📄 PDF saved (without photo — the browser blocked it). Use Print for a copy with the photo.' : '📄 PDF downloaded');
             } catch (err) {
