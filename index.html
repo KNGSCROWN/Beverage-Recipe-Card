@@ -160,6 +160,27 @@
         .meta-chip { display:inline-flex; align-items:center; gap:.25rem; padding:.2rem .6rem; border-radius:999px; background:#f7efec; color:#5c4033; font-weight:500; }
         .dark .meta-chip { background:rgba(255,255,255,.08); color:#e5d1ca; }
         @keyframes cardIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+        /* Category: calm frosted pill with a small colored dot */
+        .cat-badge { display:inline-flex; align-items:center; gap:.4rem; padding:.25rem .65rem; border-radius:999px; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#3c2817; background:rgba(255,255,255,.85); backdrop-filter:blur(6px); box-shadow:0 1px 3px rgba(0,0,0,.12); }
+        .cat-badge::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--dot,#8b6b57); }
+        .cat-basic { --dot:#b9793f; } .cat-signature { --dot:#e0a846; } .cat-tea { --dot:#3fa55f; } .cat-fusion { --dot:#8b5cf6; } .cat-default { --dot:#8b6b57; }
+        .cat-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--dot,#8b6b57); margin-right:.45rem; }
+        /* Category ribbon: slim colored tab on the photo's top-left edge (static; only the temperature animates) */
+        .cat-ribbon { position:absolute; top:12px; left:0; padding:.3rem .8rem .3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; line-height:1.2; color:#fff; background:var(--rb,#8b6b57); border-radius:0 7px 7px 0; box-shadow:0 2px 6px rgba(0,0,0,.25); }
+        .cat-ribbon::before { content:''; position:absolute; left:0; bottom:-5px; width:0; height:0; border-style:solid; border-width:5px 5px 0 0; border-color:var(--rbd,#5c4033) transparent transparent transparent; }
+        .cat-chip { display:inline-block; padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; line-height:1.2; color:#fff; background:var(--rb,#8b6b57); border-radius:7px; }
+        .cat-basic { --rb:#a96b35; --rbd:#6e4120; }
+        .cat-signature { --rb:#e0a93a; --rbd:#9a6e12; }
+        .cat-tea { --rb:#3fa55f; --rbd:#2a7343; }
+        .cat-fusion { --rb:#8b5cf6; --rbd:#5b34b8; }
+        .cat-default { --rb:#8b6b57; --rbd:#5c4033; }
+        .cat-signature.cat-ribbon, .cat-signature.cat-chip { color:#2a1708; }
+        /* Hot / Iced switch (only when a drink has both) */
+        .temp-toggle { display:inline-flex; align-items:center; gap:3px; padding:3px; border-radius:999px; background:rgba(255,255,255,.88); backdrop-filter:blur(6px); box-shadow:0 1px 3px rgba(0,0,0,.15); }
+        .temp-off { border:0; background:transparent; cursor:pointer; font-size:11px; font-weight:700; padding:.25rem .65rem; border-radius:999px; color:#5c4033; }
+        .temp-off:hover { background:rgba(60,40,23,.08); }
+        .temp-line-hot { background:linear-gradient(90deg,#ff9a2e,#e5322d); }
+        .temp-line-iced { background:linear-gradient(90deg,#38bdf8,#2563eb); }
         /* Animated Hot / Iced badge */
         .temp-badge { display:inline-flex; align-items:center; gap:.3rem; padding:.25rem .65rem; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.02em; color:#fff; position:relative; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.25); }
         .temp-ico { display:inline-block; font-size:12px; line-height:1; }
@@ -554,7 +575,7 @@
             const container = document.getElementById('categoryFilters');
             const open = cats.map(cat => `
                 <button data-cat="${esc(cat)}" onclick="setCategory(this.dataset.cat)" class="category-btn pill ${activeCategory === cat ? 'pill-on' : ''}">
-                    ${esc(cat)}
+                    ${cat !== 'ALL' ? '<i class="cat-dot ' + catClass(cat) + '"></i>' : ''}${esc(cat)}
                 </button>
             `).join('');
             const locked = lockedCats.map(c => `
@@ -580,7 +601,7 @@
             const own = String(r.temp || '').trim().toUpperCase();
             if (own === 'HOT') return 'HOT';
             if (own === 'ICED' || own === 'ICE') return 'ICED';
-            const t = (String(r.name || '') + ' ' + String(r.servingSize || '')).toUpperCase();
+            const t = (String(r.name || '') + ' ' + String(r.servingSize || '') + ' ' + String(r.sheetName || '')).toUpperCase();
             if (/\bICED?\b/.test(t)) return 'ICED';
             if (/\bHOT\b/.test(t)) return 'HOT';
             return 'OTHER';
@@ -627,22 +648,27 @@
                 return;
             }
 
-            grid.innerHTML = data.map((r, index) => {
+            grid.innerHTML = groupData(data).map(cardHtml).join('');
+        }
+
+        function cardHtml(g, gi) {
+                const r = g.sel;
                 const t = tempOf(r);
-                const tempChip = tempChipText(r);
+                const both = !!(g.vars.HOT && g.vars.ICED);
                 return `
-                <div role="button" tabindex="0" onclick="openRecipeModal(${recipes.indexOf(r)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openRecipeModal(${recipes.indexOf(r)})}" class="recipe-card group bg-white dark:bg-coffee-900 rounded-2xl border border-coffee-100 dark:border-coffee-800 overflow-hidden cursor-pointer flex flex-col">
+                <div id="card-${gi}" role="button" tabindex="0" onclick="openRecipeModal(${recipes.indexOf(r)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openRecipeModal(${recipes.indexOf(r)})}" class="recipe-card group bg-white dark:bg-coffee-900 rounded-2xl border border-coffee-100 dark:border-coffee-800 overflow-hidden cursor-pointer flex flex-col">
                     <div class="h-52 bg-gradient-to-br from-coffee-100 to-coffee-200 dark:from-coffee-800 dark:to-coffee-900 relative overflow-hidden">
                         ${r.image ? `<img src="${esc(r.image)}" alt="${esc(displayName(r))}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-5xl">☕</div>`}
                         <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/40 to-transparent pointer-events-none"></div>
-                        <span class="absolute top-3 left-3 bg-white/90 text-coffee-900 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">${esc(r.category || 'Recipe')}</span>
-                        ${tempChip ? `<span class="absolute top-3 right-3">${tempBadgeHtml(r)}</span>` : ''}
+                        ${catRibbonHtml(r.category || 'Recipe')}
+                        <div class="absolute inset-x-0 bottom-0 h-1 ${t === 'HOT' ? 'temp-line-hot' : (t === 'ICED' ? 'temp-line-iced' : '')}"></div>
+                        <span class="absolute top-3 right-3" onclick="event.stopPropagation()">${tempToggleHtml(r, both, function (x) { return "event.stopPropagation();pickVariant(" + gi + ",'" + x + "')"; })}</span>
                     </div>
                     <div class="p-4 flex flex-col flex-grow">
                         <h3 class="font-display font-bold text-[17px] leading-snug text-coffee-900 dark:text-white mb-2">${esc(displayName(r)) || 'Untitled Drink'}</h3>
                         <div class="flex flex-wrap items-center gap-1.5 text-[11px] mb-4">
-                            <span class="meta-chip">🥤 ${esc(sizeOf(r) || 'Standard')}</span>
-                            <span class="meta-chip">⏱️ ${esc(fmtTime(r.prepTime, '3 mins'))}</span>
+                            <span class="meta-chip">${icoCup()}${esc(sizeOf(r) || 'Standard')}</span>
+                            <span class="meta-chip">${icoClock()}${esc(fmtTime(r.prepTime, '3 mins'))}</span>
                         </div>
                         <div class="mt-auto pt-3 border-t border-coffee-100 dark:border-coffee-800 flex items-end justify-between gap-3">
                             <div>
@@ -656,7 +682,6 @@
                         </div>
                     </div>
                 </div>`;
-            }).join('');
         }
 
         // ---------- Text helpers (match the original card design) ----------
@@ -705,6 +730,64 @@
         function tempChipText(r) {
             const t = tempOf(r);
             return t === 'HOT' ? '🔥 Hot' : (t === 'ICED' ? '🧊 Iced' : '');
+        }
+        function catClass(cat) {
+            const c = String(cat || '').toLowerCase();
+            if (c.indexOf('basic') >= 0) return 'cat-basic';
+            if (c.indexOf('signature') >= 0) return 'cat-signature';
+            if (c.indexOf('tea') >= 0) return 'cat-tea';
+            if (c.indexOf('fusion') >= 0) return 'cat-fusion';
+            return 'cat-default';
+        }
+        function catRibbonHtml(cat) { return '<span class="cat-ribbon ' + catClass(cat) + '">' + esc(cat) + '</span>'; }
+        function catChipHtml(cat) { return '<span class="cat-chip ' + catClass(cat) + '">' + esc(cat) + '</span>'; }
+        function catBadgeHtml(cat) { return '<span class="cat-badge ' + catClass(cat) + '">' + esc(cat) + '</span>'; }
+        function icoCup() { return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/></svg>'; }
+        function icoClock() { return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'; }
+
+        // Show the animated badge, or a Hot | Iced switch when the drink exists in both temperatures
+        function tempToggleHtml(cur, hasOther, onPick) {
+            if (!hasOther) return tempBadgeHtml(cur);
+            const mk = function (t) {
+                return t === tempOf(cur) ? tempBadgeHtml(cur)
+                    : '<button type="button" class="temp-off" onclick="' + onPick(t) + '">' + (t === 'HOT' ? '🔥 Hot' : '🧊 Iced') + '</button>';
+            };
+            return '<span class="temp-toggle">' + mk('HOT') + mk('ICED') + '</span>';
+        }
+        function siblingOf(r) {
+            if (!r || !r.baseName) return null;
+            return recipes.find(function (x) {
+                return x !== r && x.baseName === r.baseName && x.category === r.category && tempOf(x) !== tempOf(r);
+            }) || null;
+        }
+
+        // One card per drink: Hot and Iced versions are grouped together
+        let cardGroups = [];
+        function groupData(data) {
+            const map = {}, out = [];
+            data.forEach(function (r) {
+                const k = r.baseName ? (r.category + '|' + r.baseName).toLowerCase() : 'solo' + out.length;
+                if (!map[k]) { map[k] = { vars: {}, order: [] }; out.push(map[k]); }
+                const t = tempOf(r);
+                map[k].vars[t] = r; map[k].order.push(t);
+            });
+            out.forEach(function (g) { g.sel = g.vars[activeTemp] || g.vars[g.order[0]]; });
+            cardGroups = out;
+            return out;
+        }
+        function pickVariant(gi, t) {
+            const g = cardGroups[gi];
+            if (!g || !g.vars[t]) return;
+            g.sel = g.vars[t];
+            const el = document.getElementById('card-' + gi);
+            if (!el) return;
+            const tmp = document.createElement('div');
+            tmp.innerHTML = cardHtml(g, gi).trim();
+            el.replaceWith(tmp.firstElementChild);
+        }
+        function switchVariant(t) {
+            const o = siblingOf(currentRecipe);
+            if (o && tempOf(o) === t) openRecipeModal(recipes.indexOf(o));
         }
         function tempBadgeHtml(r) {
             const t = tempOf(r);
@@ -1080,8 +1163,8 @@
                                 ${r.image ? `<img src="${esc(r.image)}" alt="${esc(displayName(r))}" referrerpolicy="no-referrer" onerror="this.style.display='none'" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-4xl">☕</div>`}
                             </div>
                             <div class="flex flex-wrap items-center gap-2 mb-2">
-                                <span class="inline-block bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">${esc(r.category || 'Basic Coffee')}</span>
-                                ${tempBadgeHtml(r)}
+                                ${catChipHtml(r.category || 'Basic Coffee')}
+                                ${tempToggleHtml(r, !!siblingOf(currentRecipe), function (x) { return "switchVariant('" + x + "')"; })}
                             </div>
                             <h2 class="text-2xl font-black text-white leading-tight mb-4">${esc(displayName(r)) || 'Recipe'}</h2>
 
