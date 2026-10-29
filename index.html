@@ -203,8 +203,8 @@
         .cfx-layer { position:fixed; z-index:60; overflow:hidden; pointer-events:none; border-radius:16px 16px 0 0; opacity:.82; }
         .cfx-layer, .cfx-layer * { pointer-events:none !important; }
         .cfx-slab { position:absolute; left:0; width:100%; height:200%; display:flex; flex-direction:column; will-change:transform; }
-        .cfx-up { top:100%; animation:cfxUp .36s cubic-bezier(.35,0,.65,1) forwards; }
-        .cfx-down { top:-200%; animation:cfxDown .36s cubic-bezier(.35,0,.65,1) forwards; }
+        .cfx-up { top:100%; animation:cfxUp .28s cubic-bezier(.35,0,.65,1) forwards; }
+        .cfx-down { top:-200%; animation:cfxDown .28s cubic-bezier(.35,0,.65,1) forwards; }
         @keyframes cfxUp { to { transform:translateY(-150%); } }
         @keyframes cfxDown { to { transform:translateY(150%); } }
         .cfx-flames { position:relative; height:56px; flex:none; }
@@ -868,8 +868,8 @@
                 layer.innerHTML = cfxHtml(t);
                 document.body.appendChild(layer);
             } catch (e) { console.log('transition skipped: ' + e); swap(); return; }
-            setTimeout(function () { try { swap(); } catch (e) { console.log('swap error: ' + e); } }, 175);   // covered here
-            setTimeout(function () { if (layer) layer.remove(); }, 380);
+            setTimeout(function () { try { swap(); } catch (e) { console.log('swap error: ' + e); } }, 135);   // covered here
+            setTimeout(function () { if (layer) layer.remove(); }, 300);
         }
         let cardFxBusy = {};
         function pickVariant(gi, t) {
@@ -888,7 +888,7 @@
             if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { swap(); return; }
             cardFxBusy[gi] = true;
             // The effect lives on the page (not inside the card) so replacing the card mid-way doesn't cut it off
-            setTimeout(function () { cardFxBusy[gi] = false; }, 400);
+            setTimeout(function () { cardFxBusy[gi] = false; }, 320);
             playOverEl(el.firstElementChild, t, swap, '16px 16px 0 0');
         }
         // ---- Hot / Iced switch transition (fire rises for Hot, cold water pours down for Iced) ----
@@ -958,7 +958,7 @@
             };
             if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { swap(); return; }
             modalFxBusy = true;
-            setTimeout(function () { modalFxBusy = false; }, 400);
+            setTimeout(function () { modalFxBusy = false; }, 320);
             playOverEl(document.getElementById('modalContent').firstElementChild, t, swap, '16px');
         }
         function tempBadgeHtml(r) {
