@@ -580,7 +580,7 @@
                     const freshLocked = Array.isArray(result.locked) ? result.locked : [];
                     const changed = JSON.stringify(fresh) !== JSON.stringify(recipes) ||
                                     JSON.stringify(freshLocked) !== JSON.stringify(lockedCats);
-                    recipes = fresh;
+                    if (changed || !hadCache) recipes = fresh;   // keep existing objects when nothing changed, so card clicks keep working
                     lockedCats = freshLocked;
                     setUpdated(result.updated);
                     try {
@@ -701,12 +701,20 @@
             grid.innerHTML = groupData(data).map(cardHtml).join('');
         }
 
+        // Find a recipe's position in `recipes` even if the object was replaced by a background refresh
+        function recipeIndex(r) {
+            let i = recipes.indexOf(r);
+            if (i < 0 && r) i = recipes.findIndex(function (x) { return x.sheetName === r.sheetName; });
+            return i;
+        }
+
         function cardHtml(g, gi) {
                 const r = g.sel;
+                const ri = recipeIndex(r);
                 const t = tempOf(r);
                 const both = !!(g.vars.HOT && g.vars.ICED);
                 return `
-                <div id="card-${gi}" role="button" tabindex="0" onclick="openRecipeModal(${recipes.indexOf(r)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openRecipeModal(${recipes.indexOf(r)})}" class="recipe-card group bg-white dark:bg-coffee-900 rounded-2xl border border-coffee-100 dark:border-coffee-800 overflow-hidden cursor-pointer flex flex-col">
+                <div id="card-${gi}" role="button" tabindex="0" onclick="openRecipeModal(${ri})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openRecipeModal(${ri})}" class="recipe-card group bg-white dark:bg-coffee-900 rounded-2xl border border-coffee-100 dark:border-coffee-800 overflow-hidden cursor-pointer flex flex-col">
                     <div class="h-52 bg-gradient-to-br from-coffee-100 to-coffee-200 dark:from-coffee-800 dark:to-coffee-900 relative overflow-hidden">
                         ${r.image ? `<img src="${esc(r.image)}" alt="${esc(displayName(r))}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-5xl">☕</div>`}
                         <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/40 to-transparent pointer-events-none"></div>
@@ -944,7 +952,7 @@
             const o = siblingOf(currentRecipe);
             if (!(o && tempOf(o) === t) || modalFxBusy) return;
             const swap = function () {
-                openRecipeModal(recipes.indexOf(o));
+                openRecipeModal(recipeIndex(o));
                 const c = document.getElementById('modalContent');
                 c.classList.remove('fx-enter'); void c.offsetWidth; c.classList.add('fx-enter');
             };
