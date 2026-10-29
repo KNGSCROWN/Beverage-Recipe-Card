@@ -175,6 +175,56 @@
         .cat-fusion { --rb:#8b5cf6; --rbd:#5b34b8; }
         .cat-default { --rb:#8b6b57; --rbd:#5c4033; }
         .cat-signature.cat-ribbon, .cat-signature.cat-chip { color:#2a1708; }
+        /* Hot / Iced switch transition: fire rises for Hot, cold water pours down for Iced */
+        .fx-layer { position:fixed; left:0; top:0; width:100%; height:200vh; z-index:9999; pointer-events:none; overflow:hidden; will-change:transform; display:flex; flex-direction:column; opacity:.85; }
+        .fx-hot { animation:fxUp .8s cubic-bezier(.4,0,.6,1) forwards; }
+        .fx-ice { animation:fxDown .8s cubic-bezier(.4,0,.6,1) forwards; }
+        @keyframes fxUp { from { transform:translateY(100vh); } to { transform:translateY(-200vh); } }
+        @keyframes fxDown { from { transform:translateY(-200vh); } to { transform:translateY(100vh); } }
+        .fx-flames { position:relative; height:22vh; flex:none; }
+        .fx-flames svg { position:absolute; left:0; bottom:-1px; width:100%; height:100%; transform-origin:50% 100%; }
+        .fx-f-back { animation:fxFlick .22s ease-in-out infinite alternate; }
+        .fx-f-front { animation:fxFlick .3s ease-in-out infinite alternate-reverse; }
+        @keyframes fxFlick { from { transform:scaleY(.93); } to { transform:scaleY(1.08); } }
+        .fx-hot-body { flex:1; background:linear-gradient(to bottom, #ff6a1a 0%, #e5322d 25%, #9c1b12 70%, rgba(70,10,5,0) 100%); }
+        .fx-ember { position:absolute; border-radius:50%; background:radial-gradient(circle,#fff3b0,#ff9a2e 60%,transparent 70%); animation:fxEmber .8s ease-in infinite; }
+        @keyframes fxEmber { from { transform:translateY(0); opacity:1; } to { transform:translateY(-6vh) scale(.4); opacity:0; } }
+        .fx-ice-body { flex:1; background:linear-gradient(to bottom, rgba(205,238,255,0) 0%, #cdeeff 22%, #5bb8f0 55%, #1d6fe0 100%); }
+        .fx-waves { position:relative; height:10vh; flex:none; overflow:hidden; }
+        .fx-waves svg { position:absolute; left:0; top:0; width:200%; height:100%; }
+        .fx-w-back { animation:fxWave 1.6s linear infinite; }
+        .fx-w-front { animation:fxWave 1s linear infinite; }
+        @keyframes fxWave { to { transform:translateX(-50%); } }
+        .fx-bubble { position:absolute; border-radius:50%; border:2px solid rgba(255,255,255,.75); background:rgba(255,255,255,.25); animation:fxBubble 1s ease-in infinite; }
+        @keyframes fxBubble { from { transform:translateY(0); opacity:.9; } to { transform:translateY(-8vh); opacity:0; } }
+        .fx-snow { position:absolute; color:#fff; text-shadow:0 0 8px rgba(255,255,255,.9); animation:fxSpin 1.4s linear infinite; }
+        @keyframes fxSpin { to { transform:rotate(360deg); } }
+        /* Card-sized Hot / Iced transition (fire rises / cold water pours over the card photo) */
+        .cfx-layer { position:fixed; z-index:60; overflow:hidden; pointer-events:none; border-radius:16px 16px 0 0; opacity:.82; }
+        .cfx-layer, .cfx-layer * { pointer-events:none !important; }
+        .cfx-slab { position:absolute; left:0; width:100%; height:200%; display:flex; flex-direction:column; will-change:transform; }
+        .cfx-up { top:100%; animation:cfxUp .36s cubic-bezier(.35,0,.65,1) forwards; }
+        .cfx-down { top:-200%; animation:cfxDown .36s cubic-bezier(.35,0,.65,1) forwards; }
+        @keyframes cfxUp { to { transform:translateY(-150%); } }
+        @keyframes cfxDown { to { transform:translateY(150%); } }
+        .cfx-flames { position:relative; height:56px; flex:none; }
+        .cfx-flames svg { position:absolute; left:0; bottom:-1px; width:100%; height:100%; transform-origin:50% 100%; }
+        .cfx-fb { animation:fxFlick .22s ease-in-out infinite alternate; }
+        .cfx-ff { animation:fxFlick .3s ease-in-out infinite alternate-reverse; }
+        .cfx-hotbody { flex:1; background:linear-gradient(to bottom,#ff6a1a 0%,#e5322d 25%,#9c1b12 70%,rgba(70,10,5,0) 100%); }
+        .cfx-icebody { flex:1; background:linear-gradient(to bottom,rgba(205,238,255,0) 0%,#cdeeff 22%,#5bb8f0 55%,#1d6fe0 100%); }
+        .cfx-waves { position:relative; height:30px; flex:none; overflow:hidden; }
+        .cfx-waves svg { position:absolute; left:0; top:0; width:200%; height:100%; }
+        .cfx-wb { animation:fxWave 1.6s linear infinite; }
+        .cfx-wf { animation:fxWave 1s linear infinite; }
+        .cfx-dot { position:absolute; border-radius:50%; }
+        .cfx-ember { background:radial-gradient(circle,#fff3b0,#ff9a2e 60%,transparent 70%); animation:cfxEmber .7s ease-in infinite; }
+        .cfx-bubble { border:2px solid rgba(255,255,255,.75); background:rgba(255,255,255,.25); animation:cfxEmber .9s ease-in infinite; }
+        @keyframes cfxEmber { from { transform:translateY(0); opacity:1; } to { transform:translateY(-16px) scale(.4); opacity:0; } }
+        @media (prefers-reduced-motion: reduce) { .cfx-layer { display:none; } }
+        .fx-enter { animation:fxIn .2s ease both; }
+        @keyframes fxIn { from { opacity:0; transform:scale(.96); } to { opacity:1; transform:none; } }
+        @media (prefers-reduced-motion: reduce) { .fx-layer { display:none; } .fx-enter { animation:none; } }
         /* Hot / Iced switch (only when a drink has both) */
         .temp-toggle { display:inline-flex; align-items:center; gap:3px; padding:3px; border-radius:999px; background:rgba(255,255,255,.88); backdrop-filter:blur(6px); box-shadow:0 1px 3px rgba(0,0,0,.15); }
         .temp-off { border:0; background:transparent; cursor:pointer; font-size:11px; font-weight:700; padding:.25rem .65rem; border-radius:999px; color:#5c4033; }
@@ -775,19 +825,133 @@
             cardGroups = out;
             return out;
         }
+        function cfxHtml(t) {
+            if (t === 'HOT') {
+                let em = '';
+                for (let i = 0; i < 4; i++) {
+                    const sz = 3 + (i * 2) % 4;
+                    em += '<span class="cfx-dot cfx-ember" style="left:' + ((i * 37 + 9) % 94) + '%;top:' + (2 + (i * 3) % 14) + '%;width:' + sz + 'px;height:' + sz + 'px;animation-delay:' + (i * 0.06).toFixed(2) + 's"></span>';
+                }
+                return '<div class="cfx-slab cfx-up"><div class="cfx-flames">' +
+                    '<svg class="cfx-fb" viewBox="0 0 1000 200" preserveAspectRatio="none"><defs><linearGradient id="cfg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7a1a"/><stop offset="1" stop-color="#e5322d"/></linearGradient></defs><path d="' + fxFlamePath(1.3, 120, 0, 70, 9) + '" fill="url(#cfg1)"/></svg>' +
+                    '<svg class="cfx-ff" viewBox="0 0 1000 200" preserveAspectRatio="none"><defs><linearGradient id="cfg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff176"/><stop offset="0.5" stop-color="#ffb12e"/><stop offset="1" stop-color="#ff6a1a"/></linearGradient></defs><path d="' + fxFlamePath(4.1, 125, 35, 100, 12) + '" fill="url(#cfg2)"/></svg>' +
+                    '</div><div class="cfx-hotbody"></div>' + em + '</div>';
+            }
+            let bits = '';
+            for (let i = 0; i < 4; i++) {
+                const sz = 5 + (i * 3) % 8;
+                bits += '<span class="cfx-dot cfx-bubble" style="left:' + ((i * 41 + 7) % 92) + '%;top:' + (80 + (i * 2) % 12) + '%;width:' + sz + 'px;height:' + sz + 'px;animation-delay:' + (i * 0.07).toFixed(2) + 's"></span>';
+            }
+            return '<div class="cfx-slab cfx-down"><div class="cfx-icebody"></div><div class="cfx-waves">' +
+                '<svg class="cfx-wb" viewBox="0 0 2000 100" preserveAspectRatio="none"><path d="' + fxWavePath(74, 14, 8) + '" fill="#9bd7f7" fill-opacity="0.85"/></svg>' +
+                '<svg class="cfx-wf" viewBox="0 0 2000 100" preserveAspectRatio="none"><path d="' + fxWavePath(62, 14, 8) + '" fill="#1d6fe0"/></svg>' +
+                '</div>' + bits + '</div>';
+        }
+        function playOverEl(el, t, swap, radius) {
+            // clear any leftover effect layers first
+            document.querySelectorAll('.cfx-layer').forEach(function (n) { n.remove(); });
+            let layer = null;
+            try {
+                const r = el.getBoundingClientRect();
+                const top = Math.max(r.top, 0), bottom = Math.min(r.bottom, window.innerHeight);
+                layer = document.createElement('div');
+                layer.className = 'cfx-layer';
+                layer.style.cssText = 'left:' + r.left + 'px;top:' + top + 'px;width:' + r.width + 'px;height:' + Math.max(bottom - top, 1) + 'px;border-radius:' + radius;
+                layer.innerHTML = cfxHtml(t);
+                document.body.appendChild(layer);
+            } catch (e) { console.log('transition skipped: ' + e); swap(); return; }
+            setTimeout(function () { try { swap(); } catch (e) { console.log('swap error: ' + e); } }, 175);   // covered here
+            setTimeout(function () { if (layer) layer.remove(); }, 380);
+        }
+        let cardFxBusy = {};
         function pickVariant(gi, t) {
             const g = cardGroups[gi];
-            if (!g || !g.vars[t]) return;
-            g.sel = g.vars[t];
+            if (!g || !g.vars[t] || cardFxBusy[gi]) return;
             const el = document.getElementById('card-' + gi);
             if (!el) return;
-            const tmp = document.createElement('div');
-            tmp.innerHTML = cardHtml(g, gi).trim();
-            el.replaceWith(tmp.firstElementChild);
+            const swap = function () {
+                g.sel = g.vars[t];
+                const cur = document.getElementById('card-' + gi);
+                if (!cur) return;
+                const tmp = document.createElement('div');
+                tmp.innerHTML = cardHtml(g, gi).trim();
+                cur.replaceWith(tmp.firstElementChild);
+            };
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { swap(); return; }
+            cardFxBusy[gi] = true;
+            // The effect lives on the page (not inside the card) so replacing the card mid-way doesn't cut it off
+            setTimeout(function () { cardFxBusy[gi] = false; }, 400);
+            playOverEl(el.firstElementChild, t, swap, '16px 16px 0 0');
         }
+        // ---- Hot / Iced switch transition (fire rises for Hot, cold water pours down for Iced) ----
+        let fxBusy = false;
+        function fxFlamePath(seed, baseY, minPeak, maxPeak, n) {
+            let d = 'M0,200 L0,' + baseY;
+            const w = 1000 / n;
+            for (let i = 0; i < n; i++) {
+                const x = i * w;
+                const peak = minPeak + (maxPeak - minPeak) * (0.5 + 0.5 * Math.sin(i * 2.3 + seed));
+                const mid = peak + (baseY - peak) * 0.55;
+                d += ' Q' + (x + w * 0.15) + ',' + mid + ' ' + (x + w * 0.5) + ',' + peak +
+                     ' Q' + (x + w * 0.85) + ',' + mid + ' ' + (x + w) + ',' + baseY;
+            }
+            return d + ' L1000,200 Z';
+        }
+        function fxWavePath(baseY, amp, n) {
+            const w = 2000 / n;
+            let d = 'M0,0 L0,' + baseY + ' Q' + (w / 2) + ',' + (baseY - 2 * amp) + ' ' + w + ',' + baseY;
+            for (let i = 2; i <= n; i++) d += ' T' + (i * w) + ',' + baseY;
+            return d + ' L2000,0 Z';
+        }
+        function fxHotHtml() {
+            let embers = '';
+            for (let i = 0; i < 5; i++) {
+                const size = 4 + (i * 3) % 6;
+                embers += '<span class="fx-ember" style="left:' + ((i * 37 + 11) % 98) + '%;top:' + ((i * 7) % 30) + 'vh;width:' + size + 'px;height:' + size + 'px;animation-delay:' + (i * 0.07).toFixed(2) + 's"></span>';
+            }
+            return '<div class="fx-flames">' +
+                '<svg class="fx-f-back" viewBox="0 0 1000 200" preserveAspectRatio="none"><defs><linearGradient id="fxg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7a1a"/><stop offset="1" stop-color="#e5322d"/></linearGradient></defs><path d="' + fxFlamePath(1.3, 120, 0, 70, 14) + '" fill="url(#fxg1)"/></svg>' +
+                '<svg class="fx-f-front" viewBox="0 0 1000 200" preserveAspectRatio="none"><defs><linearGradient id="fxg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff176"/><stop offset="0.5" stop-color="#ffb12e"/><stop offset="1" stop-color="#ff6a1a"/></linearGradient></defs><path d="' + fxFlamePath(4.1, 125, 35, 100, 18) + '" fill="url(#fxg2)"/></svg>' +
+                '</div><div class="fx-hot-body"></div>' + embers;
+        }
+        function fxIceHtml() {
+            let bits = '';
+            for (let i = 0; i < 5; i++) {
+                const size = 8 + (i * 5) % 15;
+                bits += '<span class="fx-bubble" style="left:' + ((i * 41 + 7) % 96) + '%;top:' + (45 + (i * 13) % 100) + 'vh;width:' + size + 'px;height:' + size + 'px;animation-delay:' + (i * 0.08).toFixed(2) + 's"></span>';
+            }
+            for (let i = 0; i < 2; i++) {
+                bits += '<span class="fx-snow" style="left:' + ((i * 53 + 9) % 92) + '%;top:' + (55 + (i * 17) % 80) + 'vh;font-size:' + (20 + (i * 5) % 16) + 'px">' + (i % 2 ? '❄' : '🧊') + '</span>';
+            }
+            return '<div class="fx-ice-body"></div><div class="fx-waves">' +
+                '<svg class="fx-w-back" viewBox="0 0 2000 100" preserveAspectRatio="none"><path d="' + fxWavePath(74, 14, 8) + '" fill="#9bd7f7" fill-opacity="0.85"/></svg>' +
+                '<svg class="fx-w-front" viewBox="0 0 2000 100" preserveAspectRatio="none"><path d="' + fxWavePath(62, 14, 8) + '" fill="#1d6fe0"/></svg>' +
+                '</div>' + bits;
+        }
+        function playTempTransition(t, swap) {
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { swap(); return; }
+            if (fxBusy) return;
+            fxBusy = true;
+            const el = document.createElement('div');
+            el.className = 'fx-layer ' + (t === 'HOT' ? 'fx-hot' : 'fx-ice');
+            el.innerHTML = t === 'HOT' ? fxHotHtml() : fxIceHtml();
+            document.body.appendChild(el);
+            setTimeout(swap, 400);                                  // swap while the screen is fully covered
+            setTimeout(function () { el.remove(); fxBusy = false; }, 840);
+        }
+        let modalFxBusy = false;
         function switchVariant(t) {
             const o = siblingOf(currentRecipe);
-            if (o && tempOf(o) === t) openRecipeModal(recipes.indexOf(o));
+            if (!(o && tempOf(o) === t) || modalFxBusy) return;
+            const swap = function () {
+                openRecipeModal(recipes.indexOf(o));
+                const c = document.getElementById('modalContent');
+                c.classList.remove('fx-enter'); void c.offsetWidth; c.classList.add('fx-enter');
+            };
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { swap(); return; }
+            modalFxBusy = true;
+            setTimeout(function () { modalFxBusy = false; }, 400);
+            playOverEl(document.getElementById('modalContent').firstElementChild, t, swap, '16px');
         }
         function tempBadgeHtml(r) {
             const t = tempOf(r);
