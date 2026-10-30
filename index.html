@@ -733,9 +733,9 @@
                                 <div class="text-[10px] uppercase tracking-wider font-semibold text-gray-500 dark:text-coffee-200/80">Total cost</div>
                                 <div class="font-display font-bold text-lg text-coffee-800 dark:text-amber-300">${esc(money(r.totalCost || 'P0.00'))}</div>
                             </div>
-                            ${r.price ? `<div class="text-right">
-                                <div class="text-[10px] uppercase tracking-wider font-semibold text-gray-500 dark:text-coffee-200/80">Suggested price</div>
-                                <div class="font-display font-bold text-lg text-emerald-700 dark:text-emerald-300">${esc(money(r.price))}</div>
+                            ${(hasMenuPrice(r) || r.price) ? `<div class="text-right">
+                                <div class="text-[10px] uppercase tracking-wider font-semibold text-gray-500 dark:text-coffee-200/80">${hasMenuPrice(r) ? 'Menu price' : 'Suggested price'}</div>
+                                <div class="font-display font-bold text-lg text-emerald-700 dark:text-emerald-300">${esc(money(hasMenuPrice(r) ? r.menuPrice : r.price))}</div>
                             </div>` : ''}
                         </div>
                     </div>
@@ -984,6 +984,15 @@
                 .filter(function (s) { return s.length > 0; });
         }
 
+        function hasMenuPrice(r) { const v = parseMoney(r.menuPrice); return v != null && v > 0; }
+        function marginOf(r) {
+            if (hasMenuPrice(r)) {
+                const c = parseMoney(r.totalCost);
+                if (c != null) return peso(parseMoney(r.menuPrice) - c);
+            }
+            return r.margin || '';
+        }
+
         // ---------- Batch size (multiplier) ----------
         function fmtNum(n) { return String(Math.round(n * 100) / 100); }
         function peso(n) { return 'P' + n.toFixed(2); }
@@ -1001,7 +1010,7 @@
                     cost: cost == null ? i.cost : peso(cost * m)
                 });
             });
-            ['totalCost', 'price', 'margin'].forEach(function (k) {
+            ['totalCost', 'price', 'margin', 'menuPrice'].forEach(function (k) {
                 const v = parseMoney(r[k]);
                 if (v != null) c[k] = peso(v * m);
             });
@@ -1066,8 +1075,9 @@
                   <div class="fact"><span>Ingredients</span><strong>${ings.length} ${ings.length === 1 ? 'item' : 'items'}</strong></div>
                 </div>
                 <div class="cost"><small>Total cost</small><b>${esc(money(r.totalCost))}</b></div>
-                ${r.price ? `<div class="pricing"><span>Suggested price</span><b>${esc(money(r.price))}</b></div>` : ''}
-                ${r.margin ? `<div class="pricing" style="margin-top:4px"><span>Gross margin</span><b>${esc(money(r.margin))}</b></div>` : ''}
+                ${hasMenuPrice(r) ? `<div class="pricing"><span>Menu price${r.batch > 1 ? ' (×' + r.batch + ')' : ''}</span><b>${esc(money(r.menuPrice))}</b></div>` : (r.price ? `<div class="pricing"><span>Suggested price</span><b>${esc(money(r.price))}</b></div>` : '')}
+                ${hasMenuPrice(r) && r.foodCostPct ? `<div class="pricing" style="margin-top:4px"><span>Food cost</span><b>${esc(r.foodCostPct)}</b></div>` : ''}
+                ${marginOf(r) ? `<div class="pricing" style="margin-top:4px"><span>Gross margin</span><b>${esc(money(marginOf(r)))}</b></div>` : ''}
               </aside>
               <div class="main">
                 <div class="sec-ing">
@@ -1361,9 +1371,10 @@
                                 <span class="text-xs text-coffee-200 font-medium">Total cost${r.batch > 1 ? ' (×' + r.batch + ')' : ''}</span>
                                 <span class="text-2xl font-black text-amber-300">${esc(money(r.totalCost || 'P0.00'))}</span>
                             </div>
-                            ${(r.price || r.margin) ? `<div class="mb-4 space-y-1 text-xs">
-                                ${r.price ? `<div class="flex justify-between"><span class="text-coffee-200">Suggested price (30% cost)</span><b class="text-white">${esc(money(r.price))}</b></div>` : ''}
-                                ${r.margin ? `<div class="flex justify-between"><span class="text-coffee-200">Gross margin</span><b class="text-white">${esc(money(r.margin))}</b></div>` : ''}
+                            ${(hasMenuPrice(r) || r.price || marginOf(r)) ? `<div class="mb-4 space-y-1 text-xs">
+                                ${hasMenuPrice(r) ? `<div class="flex justify-between"><span class="text-coffee-200">Menu price${r.batch > 1 ? ' (×' + r.batch + ')' : ''}</span><b class="text-white">${esc(money(r.menuPrice))}</b></div>` : (r.price ? `<div class="flex justify-between"><span class="text-coffee-200">Suggested price (30% cost)</span><b class="text-white">${esc(money(r.price))}</b></div>` : '')}
+                                ${hasMenuPrice(r) && r.foodCostPct ? `<div class="flex justify-between"><span class="text-coffee-200">Food cost</span><b class="text-white">${esc(r.foodCostPct)}</b></div>` : ''}
+                                ${marginOf(r) ? `<div class="flex justify-between"><span class="text-coffee-200">Gross margin</span><b class="text-white">${esc(money(marginOf(r)))}</b></div>` : ''}
                             </div>` : ''}
                             <div class="no-print grid grid-cols-2 gap-2">
                                 <button onclick="downloadPdf()" class="bg-amber-500 hover:bg-amber-600 text-coffee-950 font-bold text-xs py-2.5 px-3 rounded-xl transition shadow flex items-center justify-center space-x-1.5">
