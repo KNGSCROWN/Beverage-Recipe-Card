@@ -63,11 +63,16 @@
         #printArea .fact { display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:11px 0; border-bottom:1px solid var(--rule); }
         #printArea .fact span { font-size:13px; color:var(--soft); }
         #printArea .fact strong { font-size:15px; font-weight:700; color:#fff6ea; text-align:right; }
-        #printArea .cost { margin-top:auto; padding-top:22px; }
-        #printArea .cost small { display:block; font-size:13px; color:var(--soft); margin-bottom:4px; }
-        #printArea .cost b { display:block; font-family:var(--disp); font-size:46px; line-height:1; font-weight:700; color:var(--crema); letter-spacing:-.01em; }
-        #printArea .pricing { display:flex; justify-content:space-between; align-items:baseline; margin-top:10px; font-size:13px; color:var(--soft); }
-        #printArea .pricing b { color:#fff6ea; font-weight:700; font-size:15px; }
+        #printArea .price-wrap { margin-top:auto; padding-top:20px; }
+        #printArea .price { padding:16px 16px 15px; background:#38271e; border:1px solid var(--rule); border-radius:14px; }
+        #printArea .price .lbl { font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:var(--soft); }
+        #printArea .price .hero { margin:6px 0 0; font-family:var(--disp); font-size:40px; line-height:1; font-weight:700; color:var(--crema); letter-spacing:-.01em; }
+        #printArea .price .stats { display:flex; margin-top:14px; padding-top:12px; border-top:1px solid var(--rule); }
+        #printArea .price .stat { flex:1; min-width:0; }
+        #printArea .price .stat + .stat { margin-left:12px; padding-left:12px; border-left:1px solid var(--rule); }
+        #printArea .price .stat small { display:block; margin-bottom:3px; font-size:11px; color:var(--soft); }
+        #printArea .price .stat b { display:block; font-size:16px; font-weight:700; color:#fff6ea; white-space:nowrap; }
+        #printArea .price .stat b.warn { color:#f4a58f; }
         #printArea .main { flex:1; min-width:0; display:flex; flex-direction:column; gap:26px; padding:30px 38px; }
         #printArea .sec-ing { flex:none; }
         #printArea .sec-method { flex:1; display:flex; flex-direction:column; min-height:0; }
@@ -173,6 +178,11 @@
         .cat-signature { --rb:#e0a93a; --rbd:#9a6e12; }
         .cat-tea { --rb:#3fa55f; --rbd:#2a7343; }
         .cat-fusion { --rb:#8b5cf6; --rbd:#5b34b8; }
+        .cat-frappe { --rb:#0d9488; --rbd:#0b6b62; --dot:#0d9488; }
+        .cat-milkshake { --rb:#db2777; --rbd:#9d1b56; --dot:#db2777; }
+        .cat-smoothie { --rb:#65a30d; --rbd:#4a7a0a; --dot:#65a30d; }
+        .cat-refresher { --rb:#e11d48; --rbd:#a3153a; --dot:#e11d48; }
+        .cat-mocktail { --rb:#4f46e5; --rbd:#3730a3; --dot:#4f46e5; }
         .cat-default { --rb:#8b6b57; --rbd:#5c4033; }
         .cat-signature.cat-ribbon, .cat-signature.cat-chip { color:#2a1708; }
         /* Hot / Iced switch transition: fire rises for Hot, cold water pours down for Iced */
@@ -267,6 +277,8 @@
                 </span>
                 <button onclick="toggleDarkMode()" id="themeToggleBtn" class="hdr-btn">🌙 Dark</button>
                 <button onclick="syncData()" class="hdr-btn hdr-btn-primary">🔄 Sync Sheet</button>
+                <button id="aiBtn" onclick="openAi()" class="hdr-btn hdr-btn-primary" style="display:none">🧪 Recipe Builder</button>
+                <button id="mgrBtn" onclick="openLock('', 'manager')" class="hdr-btn" style="display:none">🔑 Manager</button>
                 <button onclick="openSettings()" class="hdr-btn">⚙️ Settings</button>
             </div>
         </div>
@@ -305,7 +317,7 @@
                 <option value="cost-desc">Cost: high to low</option>
                 <option value="price-desc">Price: high to low</option>
             </select>
-            <button id="bookBtn" onclick="downloadMenuBook()" class="ml-auto btn-solid">📚 Menu Book PDF</button>
+            <button id="bookBtn" onclick="openPdfPicker()" class="ml-auto btn-solid">📚 Menu Book PDF</button>
         </div>
 
         <!-- Loading banner -->
@@ -330,8 +342,8 @@
     <!-- Access Code Modal -->
     <div id="lockModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4 no-print">
         <div class="bg-white dark:bg-coffee-900 rounded-3xl shadow-2xl max-w-sm w-full p-7 border border-coffee-100 dark:border-coffee-800">
-            <h2 class="font-display text-xl font-bold text-coffee-900 dark:text-white mb-1">🔒 Locked categories</h2>
-            <p class="text-xs text-gray-600 dark:text-coffee-200 mb-4">Enter the access code to view the locked recipes.</p>
+            <h2 id="lockTitle" class="font-display text-xl font-bold text-coffee-900 dark:text-white mb-1">🔒 Locked categories</h2>
+            <p id="lockDesc" class="text-xs text-gray-600 dark:text-coffee-200 mb-4">Enter the access code to view the locked recipes.</p>
             <input type="password" id="lockInput" onkeydown="if(event.key==='Enter')submitLock()" autocomplete="off" class="w-full px-4 py-3 bg-coffee-50 dark:bg-coffee-800 border border-coffee-200 dark:border-coffee-700 dark:text-white rounded-xl text-sm mb-2 focus:ring-2 focus:ring-amber-400 outline-none">
             <p id="lockError" class="text-xs text-red-500 mb-3 h-4"></p>
             <div class="flex gap-2">
@@ -356,6 +368,32 @@
         </div>
     </div>
 
+    <!-- Menu Book PDF: choose what to include -->
+    <div id="pdfPickModal" onclick="if(event.target===this)closePdfPicker()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] hidden flex items-center justify-center p-4 no-print">
+        <div class="bg-white dark:bg-coffee-900 rounded-3xl shadow-2xl max-w-xl w-full max-h-[88vh] flex flex-col border border-coffee-100 dark:border-coffee-800">
+            <div class="p-6 pb-3 relative">
+                <button onclick="closePdfPicker()" aria-label="Close" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-white font-bold">✕</button>
+                <h2 class="font-display text-xl font-bold text-coffee-900 dark:text-white">📚 Menu Book PDF <span id="pdfPickTotal" class="text-xs font-semibold text-gray-500 dark:text-coffee-200 ml-1"></span></h2>
+                <p class="text-xs text-gray-600 dark:text-coffee-200 mt-1">Tick the categories or drinks to include. One landscape page per recipe.</p>
+                <div class="flex flex-wrap items-center gap-2 mt-4">
+                    <button type="button" onclick="pdfPickAll(true)" class="pill">Select all</button>
+                    <button type="button" onclick="pdfPickAll(false)" class="pill">Clear</button>
+                    <button type="button" id="pdfPickView" onclick="pdfPickView()" class="pill">What I'm viewing</button>
+                    <span class="ml-auto flex items-center gap-3 text-xs font-semibold text-coffee-800 dark:text-coffee-100">
+                        <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" id="pdfTempHot" checked onchange="syncPdfPicker()" class="h-4 w-4 accent-amber-500">🔥 Hot</label>
+                        <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" id="pdfTempIced" checked onchange="syncPdfPicker()" class="h-4 w-4 accent-amber-500">🧊 Iced</label>
+                    </span>
+                </div>
+            </div>
+            <div id="pdfPickList" class="px-6 overflow-y-auto flex-1 min-h-0"></div>
+            <div class="p-6 pt-3 flex items-center gap-3 border-t border-coffee-100 dark:border-coffee-800">
+                <span id="pdfPickCount" class="text-xs font-semibold text-coffee-800 dark:text-coffee-100"></span>
+                <button onclick="closePdfPicker()" class="ml-auto px-4 py-2.5 bg-coffee-100 dark:bg-coffee-800 text-coffee-800 dark:text-coffee-100 rounded-full text-xs font-semibold hover:bg-coffee-200 dark:hover:bg-coffee-700 transition">Cancel</button>
+                <button id="pdfPickGo" onclick="pdfPickDownload()" class="btn-solid">Download PDF</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Printable recipe card (filled by printRecipe) -->
     <div id="printArea"></div>
     <div id="pdfOverlay" class="fixed inset-0 z-[9999] hidden bg-coffee-950/95 flex items-center justify-center no-print">
@@ -363,6 +401,80 @@
             <div class="animate-spin rounded-full h-6 w-6 border-4 border-amber-400 border-t-transparent"></div>
             <span id="pdfMsg">Creating PDF...</span>
             <button id="pdfCancel" onclick="cancelBook()" class="hidden ml-4 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs">Cancel</button>
+        </div>
+    </div>
+
+
+    <!-- Recipe Builder -->
+    <div id="aiModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] hidden flex items-start justify-center p-3 sm:p-6 overflow-y-auto no-print">
+        <div class="bg-coffee-50 dark:bg-coffee-950 rounded-3xl shadow-2xl w-full max-w-5xl my-auto border border-coffee-100 dark:border-coffee-800 relative">
+            <button onclick="closeAi()" aria-label="Close Recipe Builder" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-coffee-100 dark:bg-coffee-800 text-coffee-800 dark:text-coffee-100 hover:bg-coffee-200 dark:hover:bg-coffee-700 font-bold text-sm transition">✕</button>
+            <div class="p-5 sm:p-8">
+                <h2 class="font-display text-2xl sm:text-3xl font-bold tracking-tight text-coffee-900 dark:text-white pr-10">Recipe Builder</h2>
+                <p class="text-xs sm:text-sm text-gray-600 dark:text-coffee-200 mt-1 max-w-2xl">Searches the web about an ingredient, then designs several recipes using only the items and prices in your Master BRC sheet. Costs come from your sheet, not from the AI.</p>
+
+                <div class="panel p-4 sm:p-5 mt-5">
+                    <div class="grid grid-cols-2 sm:grid-cols-6 gap-3">
+                        <div class="col-span-2 sm:col-span-2">
+                            <label for="aiIngredient" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Ingredient</label>
+                            <input id="aiIngredient" list="aiIngList" type="text" autocomplete="off" placeholder="Yuzu, Ube, Pistachio, or pick from your list"
+                                onkeydown="if(event.key==='Enter')runAi()"
+                                class="w-full px-4 py-3 bg-coffee-50 dark:bg-coffee-950/60 border border-coffee-200 dark:border-coffee-700 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 outline-none dark:text-white">
+                            <datalist id="aiIngList"></datalist>
+                        </div>
+                        <div>
+                            <label for="aiCount" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Recipes</label>
+                            <select id="aiCount" class="sel w-full"><option value="6">6 ideas</option><option value="9">9 ideas</option><option value="12" selected>12 ideas</option></select>
+                        </div>
+                        <div>
+                            <label for="aiTemp" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Temperature</label>
+                            <select id="aiTemp" class="sel w-full"><option value="any">Hot &amp; Iced</option><option value="Hot">Hot only</option><option value="Iced">Iced only</option></select>
+                        </div>
+                        <div>
+                            <label for="aiSize" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Size</label>
+                            <select id="aiSize" class="sel w-full"><option value="any">Any size</option><option value="8 oz">8 oz</option><option value="12 oz">12 oz</option></select>
+                        </div>
+                        <div>
+                            <label for="aiCat" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Category</label>
+                            <select id="aiCat" class="sel w-full"><option value="any">Any</option><option>Basic Coffee</option><option>Signature Coffee</option><option>Coffee Fusion</option><option>Tea Series</option><option>Non-Coffee</option><option>Frappe</option><option>Milkshake</option><option>Smoothie</option><option>Refreshers</option><option>Mocktail</option></select>
+                        </div>
+                        <div class="col-span-2 sm:col-span-4">
+                            <label for="aiDirection" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Direction <span class="font-normal text-gray-500 dark:text-coffee-200">(optional, links allowed)</span></label>
+                            <input id="aiDirection" type="text" maxlength="600" placeholder="Refreshing for summer, less sweet, no dairy... or paste a link to get ideas from"
+                                onkeydown="if(event.key==='Enter')runAi()"
+                                class="w-full px-4 py-3 bg-coffee-50 dark:bg-coffee-950/60 border border-coffee-200 dark:border-coffee-700 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 outline-none dark:text-white">
+                        </div>
+                        <div class="col-span-2 sm:col-span-2">
+                            <label for="aiIdeas" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Ideas</label>
+                            <select id="aiIdeas" class="sel w-full"><option value="balanced" selected>Balanced: research + original</option><option value="free">Free: AI's own ideas</option><option value="follow">Follow research list</option></select>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3 mt-4">
+                        <button id="aiRunBtn" onclick="runAi()" class="btn-solid">Research &amp; build recipes</button>
+                        <p class="text-[11px] text-gray-500 dark:text-coffee-200">Takes about 1 to 2 minutes.</p>
+                    </div>
+                </div>
+
+                <div id="aiProgress" class="hidden mt-5 text-sm text-coffee-900 dark:text-coffee-50 space-y-2" role="status" aria-live="polite">
+                    <div class="flex items-center gap-3"><span id="aiStep1Icon" class="w-5 text-center"></span><span id="aiStep1Text">Researching the ingredient</span></div>
+                    <div class="flex items-center gap-3"><span id="aiStep2Icon" class="w-5 text-center"></span><span id="aiStep2Text">Building recipes and costing them from your price list</span></div>
+                </div>
+                <p id="aiErr" class="hidden mt-4 text-sm text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl px-4 py-3" role="alert"></p>
+
+                <details id="aiNotesBox" class="hidden panel mt-5 p-4">
+                    <summary id="aiNotesTitle" class="cursor-pointer text-sm font-bold text-coffee-900 dark:text-white">Research notes</summary>
+                    <div id="aiNotesBody" class="mt-3 text-xs leading-relaxed text-gray-700 dark:text-coffee-100 whitespace-pre-line"></div>
+                    <ul id="aiSources" class="mt-3 text-xs space-y-1"></ul>
+                </details>
+
+                <div id="aiResults" class="hidden mt-6">
+                    <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+                        <h3 id="aiResultsTitle" class="font-display text-xl font-bold text-coffee-900 dark:text-white"></h3>
+                        <p id="aiCatalogNote" class="text-xs text-amber-700 dark:text-amber-300"></p>
+                    </div>
+                    <div id="aiGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -386,6 +498,10 @@
         let sortBy = 'default';
         let visibleRecipes = [];
         let lockedCats = [];
+        let showPrices = true;     // false = staff view: the sheet script sent no prices or costs
+        let lockMode = '';         // '' = normal access code, 'manager' = manager code prompt
+        let managerTry = false;    // true while a manager code is being checked
+        let prevKey = '';          // staff code to put back if the manager code is wrong
         let currentIndex = -1;
         let multiplier = 1;
         let apiUrl = localStorage.getItem('master_brc_api_url') || DEFAULT_API_URL;
@@ -510,7 +626,27 @@
             setTimeout(function () { const i = document.getElementById('lockInput'); i.value = ''; i.focus(); }, 50);
         }
 
-        function openLock(msg) {
+        // Show or hide everything that only makes sense when prices are visible
+        function updatePriceUi() {
+            const b = document.getElementById('mgrBtn');
+            if (b) b.style.display = showPrices ? 'none' : '';
+            const ai = document.getElementById('aiBtn');
+            if (ai) ai.style.display = showPrices ? '' : 'none';
+            const sel = document.getElementById('sortSelect');
+            if (sel) {
+                Array.prototype.forEach.call(sel.options, function (o) {
+                    if (/^(cost|price)-/.test(o.value)) { o.hidden = !showPrices; o.disabled = !showPrices; }
+                });
+                if (!showPrices && /^(cost|price)-/.test(sortBy)) { sortBy = 'default'; sel.value = 'default'; }
+            }
+        }
+
+        function openLock(msg, mode) {
+            lockMode = mode || '';
+            document.getElementById('lockTitle').textContent = lockMode === 'manager' ? '🔑 Manager view' : '🔒 Locked categories';
+            document.getElementById('lockDesc').textContent = lockMode === 'manager'
+                ? 'Enter the manager code to show prices and costs.'
+                : 'Enter the access code to view the locked recipes.';
             document.getElementById('lockError').textContent = msg || '';
             document.getElementById('lockModal').classList.remove('hidden');
             setTimeout(function () { const i = document.getElementById('lockInput'); i.value = ''; i.focus(); }, 50);
@@ -523,6 +659,8 @@
         function submitLock() {
             const v = document.getElementById('lockInput').value.trim();
             if (!v) return;
+            managerTry = (lockMode === 'manager');
+            prevKey = managerTry ? getKey() : '';
             setKey(v);
             document.getElementById('lockModal').classList.add('hidden');
             fetchRecipes(true);
@@ -547,6 +685,8 @@
                 if (saved && Array.isArray(saved.data) && saved.data.length && (REMEMBER_CODE === 'device' || saved.pub === true)) {
                     recipes = cleanList(saved.data);
                     lockedCats = Array.isArray(saved.locked) ? saved.locked : [];
+                    showPrices = saved.manager !== false;
+                    updatePriceUi();
                     hadCache = true;
                     setUpdated(saved.updated);
                     buildCategories();
@@ -578,14 +718,18 @@
                 if (result.status === 'success' && Array.isArray(result.data)) {
                     const fresh = cleanList(result.data);
                     const freshLocked = Array.isArray(result.locked) ? result.locked : [];
+                    const freshShow = result.manager !== false;   // missing = prices allowed (older script / no manager code)
                     const changed = JSON.stringify(fresh) !== JSON.stringify(recipes) ||
-                                    JSON.stringify(freshLocked) !== JSON.stringify(lockedCats);
+                                    JSON.stringify(freshLocked) !== JSON.stringify(lockedCats) ||
+                                    freshShow !== showPrices;
                     if (changed || !hadCache) recipes = fresh;   // keep existing objects when nothing changed, so card clicks keep working
                     lockedCats = freshLocked;
+                    showPrices = freshShow;
+                    updatePriceUi();
                     setUpdated(result.updated);
                     try {
                         if (REMEMBER_CODE === 'device' || result.unlocked === false) {
-                            localStorage.setItem(LS_KEY, JSON.stringify({ data: result.data, locked: freshLocked, updated: result.updated, pub: result.unlocked === false }));
+                            localStorage.setItem(LS_KEY, JSON.stringify({ data: result.data, locked: freshLocked, updated: result.updated, pub: result.unlocked === false, manager: freshShow }));
                         } else {
                             localStorage.removeItem(LS_KEY);      // never keep locked recipes on this device
                         }
@@ -593,9 +737,16 @@
                     const lockedTotal = freshLocked.reduce((n, c) => n + (c.count || 0), 0);
                     statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5"></span> Live Connected (${recipes.length} recipes${lockedTotal ? ' · ' + lockedTotal + ' locked' : ''})`;
                     if (result.wrongKey) {
-                        clearKey();
-                        openLock('That code is not correct. Try again.');
+                        if (managerTry && prevKey) {
+                            setKey(prevKey);                      // wrong manager code: keep the staff session
+                            openLock('That manager code is not correct. Try again.', 'manager');
+                            setTimeout(function () { fetchRecipes(); }, 0);
+                        } else {
+                            clearKey();
+                            openLock('That code is not correct. Try again.');
+                        }
                     }
+                    managerTry = false;
                     if (changed || !hadCache) {
                         buildCategories();
                         renderTools();
@@ -728,16 +879,16 @@
                             <span class="meta-chip">${icoCup()}${esc(sizeOf(r) || 'Standard')}</span>
                             <span class="meta-chip">${icoClock()}${esc(fmtTime(r.prepTime, '3 mins'))}</span>
                         </div>
-                        <div class="mt-auto pt-3 border-t border-coffee-100 dark:border-coffee-800 flex items-end justify-between gap-3">
-                            <div>
-                                <div class="text-[10px] uppercase tracking-wider font-semibold text-gray-500 dark:text-coffee-200/80">Total cost</div>
-                                <div class="font-display font-bold text-lg text-coffee-800 dark:text-amber-300">${esc(money(r.totalCost || 'P0.00'))}</div>
-                            </div>
-                            ${(hasMenuPrice(r) || r.price) ? `<div class="text-right">
+                        ${showPrices ? `<div class="mt-auto pt-3 border-t border-coffee-100 dark:border-coffee-800 flex items-end justify-between gap-3">
+                            ${(hasMenuPrice(r) || r.price) ? `<div>
                                 <div class="text-[10px] uppercase tracking-wider font-semibold text-gray-500 dark:text-coffee-200/80">${hasMenuPrice(r) ? 'Menu price' : 'Suggested price'}</div>
                                 <div class="font-display font-bold text-lg text-emerald-700 dark:text-emerald-300">${esc(money(hasMenuPrice(r) ? r.menuPrice : r.price))}</div>
-                            </div>` : ''}
-                        </div>
+                            </div>` : '<div></div>'}
+                            <div class="text-right">
+                                <div class="text-[10px] uppercase tracking-wider font-semibold text-gray-500 dark:text-coffee-200/80">Cost</div>
+                                <div class="font-display font-semibold text-sm text-coffee-800 dark:text-amber-300">${esc(money(r.totalCost || 'P0.00'))}</div>
+                            </div>
+                        </div>` : ''}
                     </div>
                 </div>`;
         }
@@ -795,6 +946,11 @@
             if (c.indexOf('signature') >= 0) return 'cat-signature';
             if (c.indexOf('tea') >= 0) return 'cat-tea';
             if (c.indexOf('fusion') >= 0) return 'cat-fusion';
+            if (c.indexOf('frappe') >= 0) return 'cat-frappe';
+            if (c.indexOf('milkshake') >= 0) return 'cat-milkshake';
+            if (c.indexOf('smoothie') >= 0) return 'cat-smoothie';
+            if (c.indexOf('refresher') >= 0) return 'cat-refresher';
+            if (c.indexOf('mocktail') >= 0) return 'cat-mocktail';
             return 'cat-default';
         }
         function catRibbonHtml(cat) { return '<span class="cat-ribbon ' + catClass(cat) + '">' + esc(cat) + '</span>'; }
@@ -993,6 +1149,15 @@
             return r.margin || '';
         }
 
+        // Cells for the pricing panel: Cost | Profit | Food cost  (food cost turns red above the 30% target)
+        function priceCells(r) {
+            const tag = r.batch > 1 ? ' (×' + r.batch + ')' : '';
+            const cells = [{ label: 'Cost' + tag, value: money(r.totalCost || 'P0.00'), warn: false }];
+            if (marginOf(r)) cells.push({ label: 'Profit', value: money(marginOf(r)), warn: false });
+            if (hasMenuPrice(r) && r.foodCostPct) cells.push({ label: 'Food cost', value: r.foodCostPct, warn: parseFloat(r.foodCostPct) > 30 });
+            return cells;
+        }
+
         // ---------- Batch size (multiplier) ----------
         function fmtNum(n) { return String(Math.round(n * 100) / 100); }
         function peso(n) { return 'P' + n.toFixed(2); }
@@ -1055,7 +1220,7 @@
 
             const ingRows = ings.map(function (i) {
                 const q = qty(i.amount);
-                return `<div class="ing"><span class="nm">${esc(tidy(i.item))}</span><span class="dots"></span><span class="q"><b>${esc(q.n)}</b> ${esc(q.u)}</span><span class="c">${esc(money(i.cost))}</span></div>`;
+                return `<div class="ing"><span class="nm">${esc(tidy(i.item))}</span><span class="dots"></span><span class="q"><b>${esc(q.n)}</b> ${esc(q.u)}</span>${showPrices ? `<span class="c">${esc(money(i.cost))}</span>` : ''}</div>`;
             }).join('');
 
             const stepRows = steps.map(function (st, j) {
@@ -1074,15 +1239,17 @@
                   <div class="fact"><span>Prep time</span><strong>${esc(fmtTime(r.prepTime))}</strong></div>
                   <div class="fact"><span>Ingredients</span><strong>${ings.length} ${ings.length === 1 ? 'item' : 'items'}</strong></div>
                 </div>
-                <div class="cost"><small>Total cost</small><b>${esc(money(r.totalCost))}</b></div>
-                ${hasMenuPrice(r) ? `<div class="pricing"><span>Menu price${r.batch > 1 ? ' (×' + r.batch + ')' : ''}</span><b>${esc(money(r.menuPrice))}</b></div>` : (r.price ? `<div class="pricing"><span>Suggested price</span><b>${esc(money(r.price))}</b></div>` : '')}
-                ${hasMenuPrice(r) && r.foodCostPct ? `<div class="pricing" style="margin-top:4px"><span>Food cost</span><b>${esc(r.foodCostPct)}</b></div>` : ''}
-                ${marginOf(r) ? `<div class="pricing" style="margin-top:4px"><span>Gross margin</span><b>${esc(money(marginOf(r)))}</b></div>` : ''}
+                ${showPrices ? `<div class="price-wrap"><div class="price">
+                  ${(hasMenuPrice(r) || r.price) ? `<div class="lbl">${hasMenuPrice(r) ? 'Menu price' + (r.batch > 1 ? ' (×' + r.batch + ')' : '') : 'Suggested price'}</div>
+                  <div class="hero">${esc(money(hasMenuPrice(r) ? r.menuPrice : r.price))}</div>
+                  <div class="stats">${priceCells(r).map(function (c) { return `<div class="stat"><small>${esc(c.label)}</small><b class="${c.warn ? 'warn' : ''}">${esc(c.value)}</b></div>`; }).join('')}</div>` : `<div class="lbl">Total cost${r.batch > 1 ? ' (×' + r.batch + ')' : ''}</div>
+                  <div class="hero">${esc(money(r.totalCost || 'P0.00'))}</div>`}
+                </div></div>` : ''}
               </aside>
               <div class="main">
                 <div class="sec-ing">
                   <h2>Ingredients</h2>
-                  <div class="ing hd"><span class="nm">Item</span><span class="dots" style="border:none"></span><span class="q">Usage</span><span class="c">Cost</span></div>
+                  <div class="ing hd"><span class="nm">Item</span><span class="dots" style="border:none"></span><span class="q">Usage</span>${showPrices ? '<span class="c">Cost</span>' : ''}</div>
                   ${ingRows}
                 </div>
                 ${steps.length ? `<div class="sec-method"><h2>Method</h2><ol class="steps">${stepRows}</ol></div>` : ''}
@@ -1270,8 +1437,120 @@
         function cancelBook() { bookCancelled = true; }
 
         // One PDF with every recipe currently shown (respects search, category, hot/iced, and sort)
-        async function downloadMenuBook() {
-            const list = visibleRecipes.slice();
+        /* ===== Menu Book PDF: choose categories / drinks ===== */
+        let pdfSel = new Set();
+        function pdfKey(r) { return r.sheetName || (String(r.name || '') + '|' + tempOf(r)); }
+        function pdfTempOk(r) {
+            const t = tempOf(r);
+            if (t === 'HOT') return document.getElementById('pdfTempHot').checked;
+            if (t === 'ICED') return document.getElementById('pdfTempIced').checked;
+            return true;
+        }
+        function pdfGroups() {
+            const order = [], by = {};
+            recipes.forEach(function (r) {
+                const c = r.category || 'Other';
+                if (!by[c]) { by[c] = []; order.push(c); }
+                by[c].push(r);
+            });
+            return { order: order, by: by };
+        }
+        function openPdfPicker() {
+            if (!recipes.length) { showToast('No recipes to export yet'); return; }
+            if (!pdfToolsReady()) return;
+            pdfSel = new Set(visibleRecipes.map(pdfKey));
+            document.getElementById('pdfTempHot').checked = true;
+            document.getElementById('pdfTempIced').checked = true;
+            document.getElementById('pdfPickView').textContent = "What I'm viewing (" + visibleRecipes.length + ')';
+            document.getElementById('pdfPickTotal').textContent = recipes.length + ' recipes in total';
+            const g = pdfGroups();
+            const rows = function (c) {
+                return g.by[c].map(function (r) {
+                    return '<label class="flex items-center gap-2 text-xs py-1 cursor-pointer">' +
+                        '<input type="checkbox" class="pdf-rec-cb h-4 w-4 accent-amber-500" data-key="' + esc(pdfKey(r)) + '" onchange="pdfPickRec(this)">' +
+                        '<span class="text-coffee-900 dark:text-white">' + esc(fullName(r)) + '</span></label>';
+                }).join('');
+            };
+            document.getElementById('pdfPickList').innerHTML = g.order.map(function (c) {
+                return '<div class="pdf-cat border-b border-coffee-100 dark:border-coffee-800" data-cat="' + esc(c) + '">' +
+                    '<div class="flex items-center gap-3 py-2.5">' +
+                    '<input type="checkbox" class="pdf-cat-cb h-4 w-4 accent-amber-500" onchange="pdfPickCat(this)">' +
+                    '<span class="font-semibold text-sm text-coffee-900 dark:text-white"><i class="cat-dot ' + catClass(c) + '"></i>' + esc(c) + '</span>' +
+                    '<span class="pdf-cat-count text-xs text-gray-500 dark:text-coffee-200"></span>' +
+                    '<button type="button" onclick="pdfToggleOpen(this)" class="ml-auto text-xs font-semibold text-coffee-700 dark:text-amber-300">Choose drinks ▾</button>' +
+                    '</div>' +
+                    '<div class="pdf-rows hidden pl-7 pb-2">' + rows(c) + '</div></div>';
+            }).join('') + (lockedCats.length ? '<p class="text-xs text-gray-500 dark:text-coffee-200 py-3">🔒 Locked categories are not listed. Enter the access code to include them.</p>' : '');
+            syncPdfPicker();
+            document.getElementById('pdfPickModal').classList.remove('hidden');
+        }
+        function closePdfPicker() { document.getElementById('pdfPickModal').classList.add('hidden'); }
+        function pdfPickRec(cb) {
+            if (cb.checked) pdfSel.add(cb.dataset.key); else pdfSel.delete(cb.dataset.key);
+            syncPdfPicker();
+        }
+        function pdfPickCat(cb) {
+            const c = cb.closest('.pdf-cat').dataset.cat;
+            recipes.forEach(function (r) {
+                if ((r.category || 'Other') !== c) return;
+                if (cb.checked) pdfSel.add(pdfKey(r)); else pdfSel.delete(pdfKey(r));
+            });
+            syncPdfPicker();
+        }
+        function pdfPickAll(on) {
+            recipes.forEach(function (r) { if (on) pdfSel.add(pdfKey(r)); else pdfSel.delete(pdfKey(r)); });
+            syncPdfPicker();
+        }
+        function pdfPickView() { pdfSel = new Set(visibleRecipes.map(pdfKey)); syncPdfPicker(); }
+        function pdfToggleOpen(btn) {
+            const hidden = btn.closest('.pdf-cat').querySelector('.pdf-rows').classList.toggle('hidden');
+            btn.textContent = hidden ? 'Choose drinks ▾' : 'Hide drinks ▴';
+        }
+        // Chosen recipes, grouped by category in sheet order
+        function pdfPickedList() {
+            const g = pdfGroups(), out = [];
+            g.order.forEach(function (c) {
+                g.by[c].forEach(function (r) { if (pdfSel.has(pdfKey(r)) && pdfTempOk(r)) out.push(r); });
+            });
+            return out;
+        }
+        function syncPdfPicker() {
+            const g = pdfGroups();
+            document.querySelectorAll('#pdfPickList .pdf-cat').forEach(function (box) {
+                const list = g.by[box.dataset.cat] || [];
+                const picked = list.filter(function (r) { return pdfSel.has(pdfKey(r)); });
+                const cb = box.querySelector('.pdf-cat-cb');
+                cb.checked = list.length > 0 && picked.length === list.length;
+                cb.indeterminate = picked.length > 0 && picked.length < list.length;
+                box.querySelector('.pdf-cat-count').textContent = picked.filter(pdfTempOk).length + ' of ' + list.length;
+                box.querySelectorAll('.pdf-rec-cb').forEach(function (rc) {
+                    rc.checked = pdfSel.has(rc.dataset.key);
+                    const r = list.find(function (x) { return pdfKey(x) === rc.dataset.key; });
+                    rc.closest('label').style.opacity = (r && !pdfTempOk(r)) ? '.4' : '';
+                });
+            });
+            const n = pdfPickedList().length;
+            document.getElementById('pdfPickCount').textContent = n + (n === 1 ? ' recipe' : ' recipes') + ' selected';
+            const go = document.getElementById('pdfPickGo');
+            go.disabled = n === 0;
+            go.style.opacity = n === 0 ? '.5' : '';
+        }
+        function pdfPickDownload() {
+            const list = pdfPickedList();
+            if (!list.length) return;
+            const g = pdfGroups();
+            const cats = g.order.filter(function (c) { return list.some(function (r) { return (r.category || 'Other') === c; }); });
+            const label = cats.length === g.order.length ? '' : (cats.length <= 2 ? cats.join(', ') : 'Selected');
+            closePdfPicker();
+            downloadMenuBook(list, label);
+        }
+        document.addEventListener('keydown', function (e) {
+            const m = document.getElementById('pdfPickModal');
+            if (e.key === 'Escape' && m && !m.classList.contains('hidden')) closePdfPicker();
+        });
+
+        async function downloadMenuBook(custom, label) {
+            const list = (Array.isArray(custom) && custom.length ? custom : visibleRecipes).slice();
             if (!list.length || !pdfToolsReady()) return;
             if (list.length > 15 && !confirm('This will build a ' + list.length + '-page PDF. It can take a minute or two. Continue?')) return;
 
@@ -1300,7 +1579,7 @@
                 if (bookCancelled || done === 0) {
                     showToast('Menu book cancelled');
                 } else {
-                    pdf.save('Master BRC Menu Book (' + done + ' recipes).pdf');
+                    pdf.save((label ? 'Master BRC - ' + String(label).replace(/[\\/:*?"<>|]/g, '-') : 'Master BRC Menu Book') + ' (' + done + ' recipes).pdf');
                     showToast(skipped ? '📚 Menu book saved (' + skipped + ' without photo)' : '📚 Menu book downloaded');
                 }
             } catch (err) {
@@ -1367,16 +1646,17 @@
                         </div>
 
                         <div>
-                            <div class="mt-6 pt-4 border-t border-white/15 flex justify-between items-end mb-4">
-                                <span class="text-xs text-coffee-200 font-medium">Total cost${r.batch > 1 ? ' (×' + r.batch + ')' : ''}</span>
-                                <span class="text-2xl font-black text-amber-300">${esc(money(r.totalCost || 'P0.00'))}</span>
-                            </div>
-                            ${(hasMenuPrice(r) || r.price || marginOf(r)) ? `<div class="mb-4 space-y-1 text-xs">
-                                ${hasMenuPrice(r) ? `<div class="flex justify-between"><span class="text-coffee-200">Menu price${r.batch > 1 ? ' (×' + r.batch + ')' : ''}</span><b class="text-white">${esc(money(r.menuPrice))}</b></div>` : (r.price ? `<div class="flex justify-between"><span class="text-coffee-200">Suggested price (30% cost)</span><b class="text-white">${esc(money(r.price))}</b></div>` : '')}
-                                ${hasMenuPrice(r) && r.foodCostPct ? `<div class="flex justify-between"><span class="text-coffee-200">Food cost</span><b class="text-white">${esc(r.foodCostPct)}</b></div>` : ''}
-                                ${marginOf(r) ? `<div class="flex justify-between"><span class="text-coffee-200">Gross margin</span><b class="text-white">${esc(money(marginOf(r)))}</b></div>` : ''}
+                            ${showPrices ? `<div class="mt-6 mb-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+                                ${(hasMenuPrice(r) || r.price) ? `
+                                <div class="text-[11px] uppercase tracking-[.09em] font-medium text-coffee-200">${hasMenuPrice(r) ? 'Menu price' + (r.batch > 1 ? ' (×' + r.batch + ')' : '') : 'Suggested price (30% cost)'}</div>
+                                <div class="font-display text-4xl font-black text-amber-300 leading-none mt-1.5">${esc(money(hasMenuPrice(r) ? r.menuPrice : r.price))}</div>
+                                <div class="flex mt-3.5 pt-3 border-t border-white/10">
+                                    ${priceCells(r).map(function (c, i) { return `<div class="flex-1 min-w-0 ${i ? 'ml-3 pl-3 border-l border-white/10' : ''}"><div class="text-[11px] text-coffee-200 mb-0.5">${esc(c.label)}</div><div class="text-base font-bold whitespace-nowrap ${c.warn ? 'text-red-300' : 'text-white'}">${esc(c.value)}</div></div>`; }).join('')}
+                                </div>` : `
+                                <div class="text-[11px] uppercase tracking-[.09em] font-medium text-coffee-200">Total cost${r.batch > 1 ? ' (×' + r.batch + ')' : ''}</div>
+                                <div class="font-display text-4xl font-black text-amber-300 leading-none mt-1.5">${esc(money(r.totalCost || 'P0.00'))}</div>`}
                             </div>` : ''}
-                            <div class="no-print grid grid-cols-2 gap-2">
+                            ${aiModalExtras(r)}<div class="no-print grid grid-cols-2 gap-2">
                                 <button onclick="downloadPdf()" class="bg-amber-500 hover:bg-amber-600 text-coffee-950 font-bold text-xs py-2.5 px-3 rounded-xl transition shadow flex items-center justify-center space-x-1.5">
                                     <span>⬇️</span><span>Download PDF</span>
                                 </button>
@@ -1398,7 +1678,7 @@
                                         <span>Item</span>
                                         <div class="flex space-x-10">
                                             <span>Usage</span>
-                                            <span>Cost</span>
+                                            ${showPrices ? '<span>Cost</span>' : ''}
                                         </div>
                                     </div>
                                     <div class="divide-y divide-dashed divide-gray-200 dark:divide-coffee-800">
@@ -1407,7 +1687,7 @@
                                                 <span class="font-medium text-coffee-900 dark:text-coffee-50 pr-2">${esc(tidy(i.item))}</span>
                                                 <div class="flex space-x-6 text-right flex-shrink-0">
                                                     <span class="text-gray-600 dark:text-coffee-200 w-12">${esc(fmtAmt(i.amount))}</span>
-                                                    <span class="font-semibold text-coffee-800 dark:text-amber-300 w-14">${esc(money(i.cost))}</span>
+                                                    ${showPrices ? `<span class="font-semibold text-coffee-800 dark:text-amber-300 w-14">${esc(money(i.cost))}</span>` : ''}
                                                 </div>
                                             </div>
                                         `).join('') : `<div class="py-3 text-gray-400 italic">No ingredients listed</div>`}
@@ -1448,6 +1728,263 @@
             const modal = document.getElementById('recipeModal');
             if (event.target === modal) {
                 closeModal();
+            }
+        }
+    </script>
+
+    <!-- Recipe Builder logic (talks to AiBuilder.gs in your Apps Script, never to Gemini directly) -->
+    <script>
+        let aiResults = [];
+        let aiBusy = false;
+        let aiCatalogLoaded = false;
+
+        function openAi() {
+            document.getElementById('aiModal').classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+            if (!aiCatalogLoaded) aiLoadCatalog();
+            setTimeout(function () { const i = document.getElementById('aiIngredient'); if (i && !aiBusy) i.focus(); }, 50);
+        }
+        function closeAi() {
+            document.getElementById('aiModal').classList.add('hidden');
+            if (document.getElementById('recipeModal').classList.contains('hidden')) document.body.classList.remove('overflow-hidden');
+        }
+
+        // Escape closes the recipe card first, then the builder
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            const modalOpen = !document.getElementById('recipeModal').classList.contains('hidden');
+            const lockOpen = !document.getElementById('lockModal').classList.contains('hidden');
+            if (!modalOpen && !lockOpen) closeAi();
+        }, true);
+        document.getElementById('aiModal').addEventListener('click', function (e) { if (e.target === this) closeAi(); });
+
+        // The request goes to the same Apps Script web app that serves the recipes.
+        // text/plain keeps it a "simple" request so the browser does not need a CORS preflight.
+        async function aiCall(payload, timeoutMs) {
+            const ctrl = new AbortController();
+            const timer = setTimeout(function () { ctrl.abort(); }, timeoutMs || 120000);
+            let text;
+            try {
+                const res = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(Object.assign({ key: getKey() }, payload)),
+                    signal: ctrl.signal
+                });
+                text = await res.text();
+            } finally { clearTimeout(timer); }
+
+            let data;
+            try { data = JSON.parse(text); }
+            catch (e) {
+                const err = new Error('Your Apps Script does not have the AI Builder yet. Add the AiBuilder file and deploy a new version.');
+                err.code = 'not_deployed';
+                throw err;
+            }
+            if (data.status !== 'success') {
+                const err = new Error(data.message || 'Something went wrong.');
+                err.code = data.code || 'server';
+                throw err;
+            }
+            return data;
+        }
+
+        async function aiLoadCatalog() {
+            try {
+                const d = await aiCall({ action: 'catalog' }, 30000);
+                const dl = document.getElementById('aiIngList');
+                dl.innerHTML = (d.items || []).map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('');
+                if (d.sizes && d.sizes.length) {
+                    const sel = document.getElementById('aiSize');
+                    sel.innerHTML = '<option value="any">Any size</option>' + d.sizes.map(function (z) { return '<option value="' + esc(z) + '">' + esc(z) + '</option>'; }).join('');
+                }
+                aiCatalogLoaded = true;
+            } catch (e) { /* the list is only a convenience */ }
+        }
+
+        function aiShowErr(msg) {
+            const el = document.getElementById('aiErr');
+            el.textContent = msg;
+            el.classList.toggle('hidden', !msg);
+        }
+        function aiHandleError(e, toastOnly) {
+            let msg = (e && e.message) || String(e);
+            if (e && e.name === 'AbortError') msg = 'That took too long. Try again, or ask for fewer ideas.';
+            else if (e && e.name === 'TypeError') msg = 'Could not reach your Google Sheet script. Check your connection and the Web App URL in Settings.';
+            if (e && e.code === 'unauthorized') openLock('', 'manager');
+            if (toastOnly) showToast('⚠️ ' + msg); else aiShowErr(msg);
+        }
+
+        function aiSetStep(n, state, text) {
+            const icon = document.getElementById('aiStep' + n + 'Icon');
+            const label = document.getElementById('aiStep' + n + 'Text');
+            if (text) label.textContent = text;
+            if (state === 'run') icon.innerHTML = '<span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-coffee-700 dark:border-amber-400 border-t-transparent"></span>';
+            else if (state === 'done') icon.textContent = '✓';
+            else if (state === 'warn') icon.textContent = '!';
+            else icon.textContent = '·';
+            label.style.opacity = state === 'wait' ? '.5' : '1';
+        }
+
+        function aiRenderNotes(ing, rs) {
+            const box = document.getElementById('aiNotesBox');
+            if (!rs || !rs.notes) { box.classList.add('hidden'); return; }
+            document.getElementById('aiNotesTitle').textContent = (rs.searched ? 'What the web says about ' : 'AI research notes for ') + ing;
+            const lines = String(rs.notes).replace(/\*\*/g, '').split('\n');
+            document.getElementById('aiNotesBody').innerHTML = lines.map(function (ln) {
+                const m = ln.match(/^\s*([A-Z][A-Za-z &\/]{2,28}):\s*(.*)$/);
+                if (m) return '<div class="mt-3"><b class="text-coffee-900 dark:text-white">' + esc(m[1]) + '</b>' + (m[2] ? '<div>' + esc(m[2]) + '</div>' : '') + '</div>';
+                return ln.trim() ? '<div>' + esc(ln) + '</div>' : '';
+            }).join('');
+            document.getElementById('aiSources').innerHTML = (rs.sources || []).filter(function (x) { return /^https:\/\//i.test(x.url); })
+                .map(function (x) { return '<li><a class="underline text-coffee-700 dark:text-amber-300" href="' + esc(x.url) + '" target="_blank" rel="noopener noreferrer">' + esc(x.title) + '</a></li>'; }).join('');
+            box.classList.remove('hidden');
+        }
+
+        async function runAi() {
+            if (aiBusy) return;
+            const ing = document.getElementById('aiIngredient').value.trim();
+            if (!ing) { aiShowErr('Type an ingredient first, for example "Yuzu" or "Ube".'); document.getElementById('aiIngredient').focus(); return; }
+
+            const opts = {
+                ingredient: ing,
+                direction: document.getElementById('aiDirection').value.trim(),
+                count: Number(document.getElementById('aiCount').value),
+                temp: document.getElementById('aiTemp').value,
+                category: document.getElementById('aiCat').value,
+                size: document.getElementById('aiSize').value,
+                ideas: document.getElementById('aiIdeas').value
+            };
+            const btn = document.getElementById('aiRunBtn');
+            aiBusy = true;
+            btn.disabled = true; btn.textContent = 'Working...'; btn.style.opacity = '.7';
+            aiShowErr('');
+            document.getElementById('aiResults').classList.add('hidden');
+            document.getElementById('aiNotesBox').classList.add('hidden');
+            document.getElementById('aiProgress').classList.remove('hidden');
+            aiSetStep(1, 'run', 'Researching ' + ing);
+            aiSetStep(2, 'wait', 'Building recipes and costing them from your price list');
+
+            const fatal = ['unauthorized', 'no_key', 'rate_limit', 'not_deployed', 'bad_request', 'catalog'];
+            try {
+                let rs = null;
+                try {
+                    rs = await aiCall(Object.assign({ action: 'research' }, opts), 120000);
+                    const badLinks = (rs.pages || []).filter(function (x) { return !x.ok; });
+                    const linkNote = (rs.pages && rs.pages.length) ? ' Read ' + (rs.pages.length - badLinks.length) + ' of ' + rs.pages.length + ' link' + (rs.pages.length > 1 ? 's' : '') + badLinks.map(function (x) { return ' (could not read ' + String(x.url).replace(/^https:\/\//, '').slice(0, 40) + ': ' + x.error + ')'; }).join('') + '.' : '';
+                    aiSetStep(1, ((rs.searched || !rs.searchError) && !badLinks.length) ? 'done' : 'warn', (rs.searched ? 'Searched the web about ' + ing + ' (' + (rs.sources || []).length + ' sources).' : 'Researched ' + ing + ' from AI knowledge' + (rs.searchError ? ' (web search unavailable: ' + String(rs.searchError).slice(0, 160) + ')' : '') + '.') + linkNote);
+                    aiRenderNotes(ing, rs);
+                } catch (e) {
+                    if (fatal.indexOf(e.code) >= 0 || e.name === 'AbortError') throw e;
+                    aiSetStep(1, 'warn', 'Research failed (' + String(e.message || e).slice(0, 220) + '). Recipes below use general knowledge.');
+                }
+
+                aiSetStep(2, 'run');
+                const fm = await aiCall(Object.assign({ action: 'formulate', notes: rs ? rs.notes : '' }, opts), 240000);
+                aiResults = fm.recipes || [];
+                aiSetStep(2, 'done', 'Built and costed ' + aiResults.length + ' recipes');
+                aiRenderResults(ing, fm.catalogNote);
+            } catch (e) {
+                aiSetStep(2, 'warn', 'Stopped');
+                aiHandleError(e);
+            } finally {
+                aiBusy = false;
+                btn.disabled = false; btn.textContent = 'Research & build recipes'; btn.style.opacity = '';
+            }
+        }
+
+        function aiStat(label, value, warn) {
+            return '<div class="flex-1 min-w-0"><div class="text-[11px] text-gray-500 dark:text-coffee-200">' + esc(label) + '</div>' +
+                '<div class="text-sm font-bold whitespace-nowrap ' + (warn ? 'text-red-600 dark:text-red-300' : 'text-coffee-900 dark:text-white') + '">' + esc(value) + '</div></div>';
+        }
+
+        function aiCardHtml(r, i) {
+            const fcWarn = parseFloat(r.foodCostPct) > 30;
+            const warns = (r.warnings || []).length;
+            return '<article class="panel p-5 flex flex-col">' +
+                '<div class="flex flex-wrap items-center gap-2 mb-2">' + catChipHtml(r.category || 'Signature Coffee') + tempBadgeHtml(r) +
+                '<span class="text-[11px] text-coffee-700 dark:text-coffee-200">' + esc(r.size) + '</span></div>' +
+                '<h4 class="font-display text-lg font-bold leading-tight text-coffee-900 dark:text-white">' + esc(displayName(r)) + '</h4>' +
+                '<p class="text-xs text-gray-600 dark:text-coffee-200 mt-1.5 flex-grow">' + esc(r.concept || '') + '</p>' +
+                ((r.outside || []).length ? '<p class="text-[11px] mt-2 text-amber-800 dark:text-amber-300">💡 Outside idea: ' + esc(r.outside.map(function (o) { return o.item; }).join(', ')) + '</p>' : '') +
+                '<div class="flex gap-3 mt-4 pt-3 border-t border-coffee-100 dark:border-coffee-800">' +
+                    aiStat('Cost', money(r.totalCost)) + aiStat('Menu price', money(r.menuPrice)) + aiStat('Food cost', r.foodCostPct, fcWarn) +
+                '</div>' +
+                '<p class="text-[11px] text-gray-500 dark:text-coffee-200 mt-2">' + (r.ingredients || []).length + ' ingredients' +
+                    (warns ? ' · <span class="text-amber-700 dark:text-amber-300">' + warns + ' note' + (warns > 1 ? 's' : '') + '</span>' : '') + '</p>' +
+                '<div class="flex gap-2 mt-4">' +
+                    '<button onclick="aiOpenRecipe(' + i + ')" class="btn-solid flex-1">Open recipe</button>' +
+                    '<button id="aiSaveBtn' + i + '" onclick="aiSaveToSheet(' + i + ')" class="px-3 py-2 rounded-full text-xs font-bold border border-coffee-200 dark:border-coffee-700 text-coffee-800 dark:text-coffee-100 hover:bg-coffee-100 dark:hover:bg-coffee-800 transition">' + aiSaveLabel(r) + '</button>' +
+                '</div></article>';
+        }
+        function aiSaveLabel(r) { return r.savedTab ? '✓ Saved' : (r.saving ? 'Saving...' : 'Save to sheet'); }
+
+        function aiRenderResults(ing, note) {
+            document.getElementById('aiResultsTitle').textContent = aiResults.length + ' recipes with ' + ing;
+            document.getElementById('aiCatalogNote').textContent = note || '';
+            document.getElementById('aiGrid').innerHTML = aiResults.map(aiCardHtml).join('');
+            document.getElementById('aiResults').classList.remove('hidden');
+            document.getElementById('aiResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        function aiRefreshCard(i) {
+            const b = document.getElementById('aiSaveBtn' + i);
+            if (b && aiResults[i]) { b.textContent = aiSaveLabel(aiResults[i]); b.disabled = !!(aiResults[i].saving || aiResults[i].savedTab); }
+        }
+
+        // Opens an AI recipe in the same detail card as the sheet recipes (batch sizes, PDF and print all work)
+        function aiOpenRecipe(i) {
+            const r = aiResults[i];
+            if (!r) return;
+            currentIndex = -1;
+            currentRecipe = r;
+            multiplier = 1;
+            renderModal();
+        }
+
+        // Extra block in the detail card sidebar, only for AI recipes
+        function aiModalExtras(r) {
+            if (!r || !r.ai) return '';
+            const idx = aiResults.findIndex(function (x) { return x.aiId === r.aiId; });
+            const ups = (r.upgrades || []).map(function (u) {
+                return '<li><span class="font-semibold text-white">' + esc(u.name) + '</span>: ' + esc(u.desc) + (u.addCost ? ' <span class="text-amber-300">(+' + esc(money(u.addCost)) + ')</span>' : '') + '</li>';
+            }).join('');
+            const warns = (r.warnings || []).map(function (w) { return '<p class="text-amber-300">⚠ ' + esc(w) + '</p>'; }).join('');
+            const outs = (r.outside || []).map(function (o) {
+                return '<li><span class="font-semibold text-white">' + esc(o.item) + '</span>' + (o.amount ? ' (about ' + esc(o.amount) + ')' : '') + (o.why ? ': ' + esc(o.why) : '') + '</li>';
+            }).join('');
+            return '<div class="no-print mb-3 text-[11px] leading-relaxed text-coffee-100 space-y-2">' +
+                (r.concept ? '<p class="italic">' + esc(r.concept) + '</p>' : '') + warns +
+                (outs ? '<div><p class="font-bold text-white mb-1">💡 Outside product ideas</p><p class="mb-1">Not in your ingredient list and not in the cost. Add one to Custom_Ingredients with its price to cost it.</p><ul class="list-disc pl-4 space-y-0.5">' + outs + '</ul></div>' : '') +
+                (ups ? '<div><p class="font-bold text-white mb-1">Upgrades</p><ul class="list-disc pl-4 space-y-0.5">' + ups + '</ul></div>' : '') +
+                (idx >= 0 ? '<button onclick="aiSaveToSheet(' + idx + ')" ' + (r.savedTab || r.saving ? 'disabled' : '') +
+                    ' class="w-full bg-white/10 hover:bg-white/20 disabled:opacity-60 text-white border border-white/20 font-bold text-xs py-2.5 px-3 rounded-xl transition">' +
+                    (r.savedTab ? '✓ Saved as tab "' + esc(r.savedTab) + '"' : (r.saving ? 'Saving...' : '💾 Save to Master BRC sheet')) + '</button>' : '') +
+                '</div>';
+        }
+
+        async function aiSaveToSheet(i) {
+            const r = aiResults[i];
+            if (!r || r.savedTab || r.saving) return;
+            if (!confirm('Add "' + displayName(r) + ' (' + r.temp + ', ' + r.size + ')" as a new recipe tab in your Master BRC sheet?')) return;
+            r.saving = true;
+            aiRefreshCard(i);
+            try {
+                const data = await aiCall({ action: 'save', recipe: r.raw }, 60000);
+                r.savedTab = data.tab;
+                const sheetMenu = data.sheet ? parseMoney(data.sheet.menuPrice) : null;
+                const mine = parseMoney(r.menuPrice);
+                if (sheetMenu != null && mine != null && Math.abs(sheetMenu - mine) > 0.01) {
+                    showToast('Saved as "' + data.tab + '". The sheet calculated ' + money(data.sheet.menuPrice) + ' vs ' + money(r.menuPrice) + ' here. Check the new tab.');
+                } else {
+                    showToast('✅ Saved as tab "' + data.tab + '" in Master BRC');
+                }
+                fetchRecipes(true);
+            } catch (e) {
+                aiHandleError(e, true);
+            } finally {
+                r.saving = false;
+                aiRefreshCard(i);
+                if (currentRecipe && currentRecipe.aiId === r.aiId && !document.getElementById('recipeModal').classList.contains('hidden')) renderModal();
             }
         }
     </script>
