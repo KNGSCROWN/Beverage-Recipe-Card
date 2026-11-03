@@ -278,6 +278,7 @@
                 <button onclick="toggleDarkMode()" id="themeToggleBtn" class="hdr-btn">🌙 Dark</button>
                 <button onclick="syncData()" class="hdr-btn hdr-btn-primary">🔄 Sync Sheet</button>
                 <button id="aiBtn" onclick="openAi()" class="hdr-btn hdr-btn-primary" style="display:none">🧪 Recipe Builder</button>
+                <button id="myBtn" onclick="openMy()" class="hdr-btn hdr-btn-primary" style="display:none">✍️ Add my recipe</button>
                 <button id="mgrBtn" onclick="openLock('', 'manager')" class="hdr-btn" style="display:none">🔑 Manager</button>
                 <button onclick="openSettings()" class="hdr-btn">⚙️ Settings</button>
             </div>
@@ -353,6 +354,20 @@
         </div>
     </div>
 
+    <!-- Admin code (saving recipes to the sheet) -->
+    <div id="adminModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4 no-print">
+        <div class="bg-white dark:bg-coffee-900 rounded-3xl shadow-2xl max-w-sm w-full p-7 border border-coffee-100 dark:border-coffee-800">
+            <h2 class="font-display text-xl font-bold text-coffee-900 dark:text-white mb-1">🔑 Admin code</h2>
+            <p class="text-xs text-gray-600 dark:text-coffee-200 mb-4">Saving a recipe to the Master BRC sheet is limited to the admin. Enter the admin code to continue.</p>
+            <input type="password" id="adminInput" onkeydown="if(event.key==='Enter')submitAdminLock()" autocomplete="off" class="w-full px-4 py-3 bg-coffee-50 dark:bg-coffee-800 border border-coffee-200 dark:border-coffee-700 dark:text-white rounded-xl text-sm mb-2 focus:ring-2 focus:ring-amber-400 outline-none">
+            <p id="adminError" class="text-xs text-red-500 mb-3 h-4"></p>
+            <div class="flex gap-2">
+                <button onclick="closeAdminLock()" class="flex-1 px-4 py-2.5 bg-coffee-100 dark:bg-coffee-800 text-coffee-800 dark:text-coffee-100 rounded-full text-xs font-semibold hover:bg-coffee-200 dark:hover:bg-coffee-700 transition">Not now</button>
+                <button onclick="submitAdminLock()" class="flex-1 btn-solid">Unlock</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Settings Modal -->
     <div id="settingsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 no-print">
         <div class="bg-white dark:bg-coffee-900 rounded-3xl shadow-2xl max-w-md w-full p-7 relative border border-coffee-100 dark:border-coffee-800">
@@ -404,6 +419,73 @@
         </div>
     </div>
 
+
+    <!-- Add my own recipe -->
+    <div id="myModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[46] hidden flex items-start justify-center p-3 sm:p-6 overflow-y-auto no-print">
+        <div class="bg-coffee-50 dark:bg-coffee-950 rounded-3xl shadow-2xl w-full max-w-3xl my-auto border border-coffee-100 dark:border-coffee-800 relative">
+            <button onclick="closeMy()" aria-label="Close" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-coffee-100 dark:bg-coffee-800 text-coffee-800 dark:text-coffee-100 hover:bg-coffee-200 dark:hover:bg-coffee-700 font-bold text-sm transition">✕</button>
+            <div class="p-5 sm:p-8">
+                <h2 class="font-display text-2xl sm:text-3xl font-bold tracking-tight text-coffee-900 dark:text-white pr-10">Add my own recipe</h2>
+                <p class="text-xs sm:text-sm text-gray-600 dark:text-coffee-200 mt-1 max-w-2xl">Enter your drink and its ingredients. The assistant drafts the steps, barista notes and name ideas. Costs come from your sheet prices. Saving creates a new tab from the recipe template (admin only).</p>
+
+                <div class="mt-5 bg-white dark:bg-coffee-900 rounded-2xl border border-coffee-100 dark:border-coffee-800 p-4 sm:p-5">
+                    <div class="grid grid-cols-2 sm:grid-cols-6 gap-3">
+                        <div class="col-span-2 sm:col-span-4">
+                            <label for="myName" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Drink name <span class="font-normal text-gray-500 dark:text-coffee-200">(leave empty to get ideas)</span></label>
+                            <input id="myName" type="text" maxlength="60" oninput="myTouch()" placeholder="e.g. Peach Cloud Latte" class="w-full px-3 py-2 bg-white dark:bg-coffee-900/60 border border-coffee-200 dark:border-coffee-700 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 outline-none dark:text-white">
+                        </div>
+                        <div class="col-span-2">
+                            <label for="myPrep" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Prep time</label>
+                            <input id="myPrep" type="text" maxlength="20" oninput="myTouch()" placeholder="3 mins" class="w-full px-3 py-2 bg-white dark:bg-coffee-900/60 border border-coffee-200 dark:border-coffee-700 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 outline-none dark:text-white">
+                        </div>
+                        <div class="col-span-2">
+                            <label for="myCat" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Category</label>
+                            <select id="myCat" onchange="myTouch()" class="sel w-full"><option value="auto">Auto (assistant picks)</option><option>Basic Coffee</option><option>Signature Coffee</option><option>Coffee Fusion</option><option>Tea Series</option><option>Non-Coffee</option><option>Frappe</option><option>Milkshake</option><option>Smoothie</option><option>Refreshers</option><option>Mocktail</option></select>
+                        </div>
+                        <div class="col-span-1 sm:col-span-2">
+                            <label for="myTemp" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Temperature</label>
+                            <select id="myTemp" onchange="myTouch()" class="sel w-full"><option value="Hot">Hot</option><option value="Iced" selected>Iced</option></select>
+                        </div>
+                        <div class="col-span-1 sm:col-span-2">
+                            <label for="mySize" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Size</label>
+                            <select id="mySize" onchange="myTouch()" class="sel w-full"><option value="8 oz">8 oz</option><option value="12 oz" selected>12 oz</option></select>
+                        </div>
+                    </div>
+
+                    <div class="mt-5">
+                        <p class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Ingredients <span class="font-normal text-gray-500 dark:text-coffee-200">(pick from your list as you type, amounts in grams. The cup is added automatically.)</span></p>
+                        <div id="myIngRows" class="space-y-2"></div>
+                        <button type="button" onclick="myAddRow()" class="pill mt-3">+ Add ingredient</button>
+                    </div>
+
+                    <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label for="mySteps" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Preparation steps <span class="font-normal text-gray-500 dark:text-coffee-200">(one per line)</span></label>
+                            <textarea id="mySteps" rows="7" oninput="myTouch()" placeholder="Write your own, or tap Draft to let the assistant write them." class="w-full px-3 py-2 bg-white dark:bg-coffee-900/60 border border-coffee-200 dark:border-coffee-700 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 outline-none dark:text-white"></textarea>
+                        </div>
+                        <div>
+                            <label for="myNotes" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Barista notes &amp; quality checks <span class="font-normal text-gray-500 dark:text-coffee-200">(one per line)</span></label>
+                            <textarea id="myNotes" rows="7" oninput="myTouch()" placeholder="Temperature, texture, presentation, storage or allergen notes." class="w-full px-3 py-2 bg-white dark:bg-coffee-900/60 border border-coffee-200 dark:border-coffee-700 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 outline-none dark:text-white"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex flex-wrap items-center gap-2">
+                        <button id="myDraftBtn" type="button" onclick="myRun(true)" class="btn-solid">✨ Draft steps, notes &amp; names</button>
+                        <button id="myCostBtn" type="button" onclick="myRun(false)" class="pill">💰 Check cost</button>
+                        <span id="myStatus" class="text-xs text-gray-600 dark:text-coffee-200"></span>
+                    </div>
+                    <div id="mySuggest" class="mt-3 hidden"></div>
+                </div>
+
+                <div id="myCost" class="hidden mt-4 bg-white dark:bg-coffee-900 rounded-2xl border border-coffee-100 dark:border-coffee-800 p-4 sm:p-5"></div>
+
+                <div class="mt-5 flex flex-wrap items-center gap-3">
+                    <button id="mySaveBtn" type="button" onclick="mySave()" class="btn-solid">💾 Save to Master BRC sheet</button>
+                    <span class="text-xs text-gray-600 dark:text-coffee-200">Creates a new tab from the recipe template. Needs the admin code.</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Recipe Builder -->
     <div id="aiModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] hidden flex items-start justify-center p-3 sm:p-6 overflow-y-auto no-print">
@@ -632,6 +714,8 @@
             if (b) b.style.display = showPrices ? 'none' : '';
             const ai = document.getElementById('aiBtn');
             if (ai) ai.style.display = showPrices ? '' : 'none';
+            const my = document.getElementById('myBtn');
+            if (my) my.style.display = showPrices ? '' : 'none';
             const sel = document.getElementById('sortSelect');
             if (sel) {
                 Array.prototype.forEach.call(sel.options, function (o) {
@@ -1768,7 +1852,7 @@
                 const res = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(Object.assign({ key: getKey() }, payload)),
+                    body: JSON.stringify(Object.assign({ key: getKey(), adminKey: getAdminKey() }, payload)),
                     signal: ctrl.signal
                 });
                 text = await res.text();
@@ -1798,6 +1882,12 @@
                     const sel = document.getElementById('aiSize');
                     sel.innerHTML = '<option value="any">Any size</option>' + d.sizes.map(function (z) { return '<option value="' + esc(z) + '">' + esc(z) + '</option>'; }).join('');
                 }
+                if (d.sizes && d.sizes.length) {
+                    const ms = document.getElementById('mySize');
+                    const keep = ms.value;
+                    ms.innerHTML = d.sizes.map(function (z) { return '<option value="' + esc(z) + '">' + esc(z) + '</option>'; }).join('');
+                    ms.value = d.sizes.indexOf(keep) >= 0 ? keep : (d.sizes.indexOf('12 oz') >= 0 ? '12 oz' : d.sizes[0]);
+                }
                 aiCatalogLoaded = true;
             } catch (e) { /* the list is only a convenience */ }
         }
@@ -1812,6 +1902,7 @@
             if (e && e.name === 'AbortError') msg = 'That took too long. Try again, or ask for fewer ideas.';
             else if (e && e.name === 'TypeError') msg = 'Could not reach your Google Sheet script. Check your connection and the Web App URL in Settings.';
             if (e && e.code === 'unauthorized') openLock('', 'manager');
+            if (e && e.code === 'admin_required') { setAdminKey(''); openAdminLock(null, 'That admin code did not work. Enter it again.'); }
             if (toastOnly) showToast('⚠️ ' + msg); else aiShowErr(msg);
         }
 
@@ -1962,9 +2053,194 @@
                 '</div>';
         }
 
+        /* ===== Add my own recipe ===== */
+        let myBuilt = null, myDirty = true, myBusy = false;
+        function openMy() {
+            document.getElementById('myModal').classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+            if (!aiCatalogLoaded) aiLoadCatalog();
+            if (!document.getElementById('myIngRows').children.length) { for (let i = 0; i < 3; i++) myAddRow(); }
+        }
+        function closeMy() {
+            document.getElementById('myModal').classList.add('hidden');
+            if (document.getElementById('recipeModal').classList.contains('hidden') && document.getElementById('aiModal').classList.contains('hidden')) document.body.classList.remove('overflow-hidden');
+        }
+        function myStatus(msg, bad) {
+            const el = document.getElementById('myStatus');
+            el.textContent = msg || '';
+            el.className = 'text-xs ' + (bad ? 'text-red-500' : 'text-gray-600 dark:text-coffee-200');
+        }
+        function myTouch() { myDirty = true; }
+        function myAddRow(item, amount) {
+            const rows = document.getElementById('myIngRows');
+            if (rows.children.length >= 9) { showToast('Up to 9 ingredients (the cup is added automatically)'); return; }
+            const d = document.createElement('div');
+            d.className = 'my-row flex items-center gap-2';
+            d.innerHTML = '<input list="aiIngList" oninput="myTouch()" placeholder="Ingredient (start typing)" class="my-item flex-1 min-w-0 px-3 py-2 bg-white dark:bg-coffee-900/60 border border-coffee-200 dark:border-coffee-700 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 outline-none dark:text-white">' +
+                '<input type="number" min="0" step="0.1" oninput="myTouch()" placeholder="grams" class="my-amt w-24 px-3 py-2 bg-white dark:bg-coffee-900/60 border border-coffee-200 dark:border-coffee-700 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 outline-none dark:text-white">' +
+                '<button type="button" onclick="myRemoveRow(this)" aria-label="Remove ingredient" class="w-8 h-8 rounded-full bg-coffee-100 dark:bg-coffee-800 text-coffee-800 dark:text-coffee-100 hover:bg-coffee-200 dark:hover:bg-coffee-700 font-bold text-xs transition">✕</button>';
+            if (item) d.querySelector('.my-item').value = item;
+            if (amount) d.querySelector('.my-amt').value = amount;
+            rows.appendChild(d);
+        }
+        function myRemoveRow(btn) { btn.closest('.my-row').remove(); myTouch(); }
+        function myLines(id) {
+            return document.getElementById(id).value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+        }
+        function myCollect() {
+            const cat = document.getElementById('myCat').value;
+            return {
+                name: document.getElementById('myName').value.trim(),
+                category: cat === 'auto' ? '' : cat,
+                temp: document.getElementById('myTemp').value,
+                size: document.getElementById('mySize').value,
+                prepTime: document.getElementById('myPrep').value.trim(),
+                ingredients: Array.prototype.map.call(document.querySelectorAll('#myIngRows .my-row'), function (r) {
+                    return { item: r.querySelector('.my-item').value.trim(), amount: parseFloat(r.querySelector('.my-amt').value) };
+                }).filter(function (x) { return x.item && x.amount > 0; }),
+                steps: myLines('mySteps'),
+                notes: myLines('myNotes')
+            };
+        }
+        function myBusyUi(on) {
+            myBusy = on;
+            ['myDraftBtn', 'myCostBtn', 'mySaveBtn'].forEach(function (id) {
+                const b = document.getElementById(id);
+                b.disabled = on;
+                b.style.opacity = on ? '.6' : '';
+            });
+        }
+        function myError(e) {
+            let msg = (e && e.message) || String(e);
+            if (e && e.name === 'AbortError') msg = 'That took too long. Try again.';
+            else if (e && e.name === 'TypeError') msg = 'Could not reach your Google Sheet script. Check your connection and the Web App URL in Settings.';
+            if (e && e.code === 'unauthorized') openLock('', 'manager');
+            if (e && e.code === 'admin_required') { setAdminKey(''); openAdminLock(null, 'That admin code did not work. Enter it again.'); }
+            myStatus(msg, true);
+        }
+        function myRenderSuggest(names) {
+            const box = document.getElementById('mySuggest');
+            if (!names || !names.length) { box.classList.add('hidden'); return; }
+            box.innerHTML = '<p class="text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1.5">Name ideas (tap one to use it)</p><div class="flex flex-wrap gap-2">' +
+                names.map(function (n) { return '<button type="button" class="pill" data-name="' + esc(n) + '" onclick="myPickName(this.dataset.name)">' + esc(n) + '</button>'; }).join('') + '</div>';
+            box.classList.remove('hidden');
+        }
+        function myPickName(n) { document.getElementById('myName').value = n; myTouch(); }
+        function myRenderCost(r) {
+            const box = document.getElementById('myCost');
+            const rows = (r.ingredients || []).map(function (i) {
+                return '<tr class="border-t border-coffee-100 dark:border-coffee-800"><td class="py-1.5 pr-2">' + esc(i.item) + '</td><td class="py-1.5 px-2 text-right whitespace-nowrap">' + esc(i.amount) + '</td><td class="py-1.5 pl-2 text-right whitespace-nowrap">' + money(i.cost) + '</td></tr>';
+            }).join('');
+            const warns = (r.warnings || []).map(function (w) { return '<p class="text-xs text-amber-700 dark:text-amber-300 mt-1.5">⚠ ' + esc(w) + '</p>'; }).join('');
+            const stat = function (label, val) {
+                return '<div><p class="text-[11px] text-gray-500 dark:text-coffee-200">' + label + '</p><p class="font-display text-lg font-bold text-coffee-900 dark:text-white">' + val + '</p></div>';
+            };
+            box.innerHTML = '<div class="grid grid-cols-3 gap-3 text-center mb-3">' + stat('Cost', money(r.totalCost)) + stat('Menu price', money(r.menuPrice)) + stat('Food cost', esc(r.foodCostPct)) + '</div>' +
+                '<table class="w-full text-xs text-coffee-900 dark:text-coffee-100"><tbody>' + rows + '</tbody></table>' + warns +
+                '<p class="text-[11px] text-gray-500 dark:text-coffee-200 mt-3">Costs use your sheet prices. Items shown here are what will be saved, with the right cup added.</p>';
+            box.classList.remove('hidden');
+        }
+        async function myRun(assist) {
+            if (myBusy) return;
+            const rec = myCollect();
+            if (!rec.ingredients.length) { myStatus('Add at least one ingredient with an amount.', true); return; }
+            myBusyUi(true);
+            myStatus(assist ? 'Drafting steps, notes and names...' : 'Checking cost...');
+            try {
+                const d = await aiCall({ action: 'myrecipe', assist: !!assist, recipe: rec }, 90000);
+                myBuilt = d.recipe;
+                if (d.draft) {
+                    if (!rec.name && d.draft.name) document.getElementById('myName').value = d.draft.name;
+                    if (rec.category === '' && d.draft.category) document.getElementById('myCat').value = d.draft.category;
+                    if (!rec.prepTime && d.draft.prepTime) document.getElementById('myPrep').value = d.draft.prepTime;
+                    document.getElementById('mySteps').value = (d.draft.steps || []).map(function (s, i) { return (i + 1) + '. ' + s; }).join('\n');
+                    document.getElementById('myNotes').value = (d.draft.notes || []).join('\n');
+                }
+                myDirty = false;
+                myRenderSuggest(d.suggestedNames);
+                myRenderCost(d.recipe);
+                myStatus(assist ? 'Draft ready. Edit anything you like, then save.' : 'Cost updated.');
+            } catch (e) {
+                myError(e);
+            } finally {
+                myBusyUi(false);
+            }
+        }
+        function myReset() {
+            ['myName', 'myPrep', 'mySteps', 'myNotes'].forEach(function (id) { document.getElementById(id).value = ''; });
+            document.getElementById('myCat').value = 'auto';
+            document.getElementById('myIngRows').innerHTML = '';
+            for (let i = 0; i < 3; i++) myAddRow();
+            document.getElementById('mySuggest').classList.add('hidden');
+            document.getElementById('myCost').classList.add('hidden');
+            myBuilt = null; myDirty = true;
+        }
+        async function mySave() {
+            if (myBusy) return;
+            const rec = myCollect();
+            if (!rec.name) { myStatus('Give the drink a name first, or tap Draft to get name ideas.', true); return; }
+            if (!rec.ingredients.length) { myStatus('Add at least one ingredient with an amount.', true); return; }
+            if (!getAdminKey()) { openAdminLock(function () { mySave(); }); return; }
+            if (myDirty || !myBuilt) {
+                await myRun(false);
+                if (myDirty || !myBuilt) return;
+            }
+            const left = (myBuilt.warnings || []).filter(function (w) { return /^Not in your ingredient list/.test(w); });
+            const msg = (left.length ? 'These will NOT be saved because they are not in your ingredient list:\n' + left.join('\n') + '\n\n' : '') +
+                'Add "' + rec.name + ' (' + rec.temp + ', ' + rec.size + ')" as a new recipe tab in your Master BRC sheet?';
+            if (!confirm(msg)) return;
+            myBusyUi(true);
+            myStatus('Saving to the sheet...');
+            try {
+                const data = await aiCall({ action: 'save', recipe: myBuilt.raw }, 60000);
+                showToast('✅ Saved as tab "' + data.tab + '" in Master BRC');
+                fetchRecipes(true);
+                myReset();
+                myStatus('Saved as tab "' + data.tab + '". You can add another recipe.');
+            } catch (e) {
+                myError(e);
+            } finally {
+                myBusyUi(false);
+            }
+        }
+
+        /* ===== Admin code: only the admin can save recipes to the sheet ===== */
+        let adminNext = null;
+        function getAdminKey() { try { return sessionStorage.getItem('brc_admin') || ''; } catch (e) { return ''; } }
+        function setAdminKey(v) { try { if (v) sessionStorage.setItem('brc_admin', v); else sessionStorage.removeItem('brc_admin'); } catch (e) {} }
+        function openAdminLock(next, note) {
+            adminNext = next || null;
+            document.getElementById('adminError').textContent = note || '';
+            const input = document.getElementById('adminInput');
+            input.value = '';
+            document.getElementById('adminModal').classList.remove('hidden');
+            setTimeout(function () { input.focus(); }, 50);
+        }
+        function closeAdminLock() {
+            document.getElementById('adminModal').classList.add('hidden');
+            adminNext = null;
+        }
+        async function submitAdminLock() {
+            const v = document.getElementById('adminInput').value.trim();
+            const err = document.getElementById('adminError');
+            if (!v) return;
+            err.textContent = 'Checking...';
+            try {
+                await aiCall({ action: 'admincheck', adminKey: v }, 30000);
+                setAdminKey(v);
+                const next = adminNext;
+                closeAdminLock();
+                showToast('🔑 Admin unlocked for this tab');
+                if (next) next();
+            } catch (e) {
+                err.textContent = (e && e.code === 'admin_required') ? 'Wrong admin code.' : ((e && e.message) || 'Could not check the code.');
+            }
+        }
+
         async function aiSaveToSheet(i) {
             const r = aiResults[i];
             if (!r || r.savedTab || r.saving) return;
+            if (!getAdminKey()) { openAdminLock(function () { aiSaveToSheet(i); }); return; }
             if (!confirm('Add "' + displayName(r) + ' (' + r.temp + ', ' + r.size + ')" as a new recipe tab in your Master BRC sheet?')) return;
             r.saving = true;
             aiRefreshCard(i);
