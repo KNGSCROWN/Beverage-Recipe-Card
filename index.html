@@ -1430,6 +1430,7 @@
             const card = area.querySelector('.pcard');
             const photo = area.querySelector('.photo');
             let photoSkipped = false;
+            let photoImg = null;
 
             if (r.image) {
                 try {
@@ -1449,7 +1450,15 @@
                         im.onerror = resolve;
                         im.src = dataUrl;
                     });
-                    photo.style.backgroundImage = "url('" + dataUrl + "')";
+                    // Not painted as a CSS background: iPhone browsers often leave it blank. It is drawn onto the canvas below instead.
+                    photo.style.backgroundImage = 'none';
+                    photoImg = await new Promise(function (resolve) {
+                        const im2 = new Image();
+                        im2.onload = function () { resolve(im2); };
+                        im2.onerror = function () { resolve(null); };
+                        im2.src = dataUrl;
+                    });
+                    if (!photoImg) throw new Error('photo could not be decoded');
                 } catch (e) {
                     console.warn('Photo skipped in PDF:', e);
                     photo.style.backgroundImage = 'none';
@@ -1463,12 +1472,43 @@
             if (fontCss) opts.fontEmbedCSS = fontCss;
 
             // Safari draws blank on the first try, so do one warm-up pass there
-            if (!safariWarmed && /^((?!chrome|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent)) {
+            const ua = navigator.userAgent;
+            const isApple = /iP(hone|ad|od)/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) || /^((?!chrome|android|crios|fxios|edg).)*safari/i.test(ua);
+            if (!safariWarmed && isApple) {
                 try { await window.htmlToImage.toCanvas(card, opts); } catch (e) {}
             }
             safariWarmed = true;
 
             const canvas = await window.htmlToImage.toCanvas(card, opts);
+
+            // Draw the photo straight onto the card image (same "cover" crop as the card): works on every browser
+            if (photoImg) {
+                try {
+                    const cr = card.getBoundingClientRect(), pr = photo.getBoundingClientRect();
+                    const k = canvas.width / cr.width;
+                    const b = 3;   // photo border in CSS px
+                    const x = (pr.left - cr.left + b) * k, y = (pr.top - cr.top + b) * k;
+                    const w = (pr.width - 2 * b) * k, h = (pr.height - 2 * b) * k;
+                    const rad = 13 * k;
+                    const sc = Math.max(w / photoImg.naturalWidth, h / photoImg.naturalHeight);
+                    const dw = photoImg.naturalWidth * sc, dh = photoImg.naturalHeight * sc;
+                    const ctx = canvas.getContext('2d');
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(x + rad, y);
+                    ctx.arcTo(x + w, y, x + w, y + h, rad);
+                    ctx.arcTo(x + w, y + h, x, y + h, rad);
+                    ctx.arcTo(x, y + h, x, y, rad);
+                    ctx.arcTo(x, y, x + w, y, rad);
+                    ctx.closePath();
+                    ctx.clip();
+                    ctx.drawImage(photoImg, x + (w - dw) * 0.5, y + (h - dh) * 0.3, dw, dh);
+                    ctx.restore();
+                } catch (e) {
+                    console.warn('Photo draw failed:', e);
+                    photoSkipped = true;
+                }
+            }
             return { canvas: canvas, photoSkipped: photoSkipped };
         }
 
