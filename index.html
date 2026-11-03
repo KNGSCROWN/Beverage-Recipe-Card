@@ -168,13 +168,14 @@
         /* Category: calm frosted pill with a small colored dot */
         .cat-badge { display:inline-flex; align-items:center; gap:.4rem; padding:.25rem .65rem; border-radius:999px; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#3c2817; background:rgba(255,255,255,.85); backdrop-filter:blur(6px); box-shadow:0 1px 3px rgba(0,0,0,.12); }
         .cat-badge::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--dot,#8b6b57); }
-        .cat-basic { --dot:#b9793f; } .cat-signature { --dot:#e0a846; } .cat-tea { --dot:#3fa55f; } .cat-fusion { --dot:#8b5cf6; } .cat-default { --dot:#8b6b57; }
+        .cat-basicapp { --dot:#0284c7; } .cat-basic { --dot:#b9793f; } .cat-signature { --dot:#e0a846; } .cat-tea { --dot:#3fa55f; } .cat-fusion { --dot:#8b5cf6; } .cat-default { --dot:#8b6b57; }
         .cat-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--dot,#8b6b57); margin-right:.45rem; }
         /* Category ribbon: slim colored tab on the photo's top-left edge (static; only the temperature animates) */
         .cat-ribbon { position:absolute; top:12px; left:0; padding:.3rem .8rem .3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; line-height:1.2; color:#fff; background:var(--rb,#8b6b57); border-radius:0 7px 7px 0; box-shadow:0 2px 6px rgba(0,0,0,.25); }
         .cat-ribbon::before { content:''; position:absolute; left:0; bottom:-5px; width:0; height:0; border-style:solid; border-width:5px 5px 0 0; border-color:var(--rbd,#5c4033) transparent transparent transparent; }
         .cat-chip { display:inline-block; padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; line-height:1.2; color:#fff; background:var(--rb,#8b6b57); border-radius:7px; }
         .cat-basic { --rb:#a96b35; --rbd:#6e4120; }
+        .cat-basicapp { --rb:#0284c7; --rbd:#075985; --dot:#0284c7; }
         .cat-signature { --rb:#e0a93a; --rbd:#9a6e12; }
         .cat-tea { --rb:#3fa55f; --rbd:#2a7343; }
         .cat-fusion { --rb:#8b5cf6; --rbd:#5b34b8; }
@@ -277,8 +278,8 @@
                 </span>
                 <button onclick="toggleDarkMode()" id="themeToggleBtn" class="hdr-btn">🌙 Dark</button>
                 <button onclick="syncData()" class="hdr-btn hdr-btn-primary">🔄 Sync Sheet</button>
-                <button id="aiBtn" onclick="openAi()" class="hdr-btn hdr-btn-primary" style="display:none">🧪 Recipe Builder</button>
-                <button id="myBtn" onclick="openMy()" class="hdr-btn hdr-btn-primary" style="display:none">✍️ Add my recipe</button>
+                <button id="aiBtn" onclick="openAi()" class="hdr-btn hdr-btn-primary" style="display:none">🧪 AI Recipe Builder</button>
+                <button id="myBtn" onclick="openMy()" class="hdr-btn hdr-btn-primary" style="display:none">＋ New Recipe</button>
                 <button id="mgrBtn" onclick="openLock('', 'manager')" class="hdr-btn" style="display:none">🔑 Manager</button>
                 <button onclick="openSettings()" class="hdr-btn">⚙️ Settings</button>
             </div>
@@ -425,7 +426,7 @@
         <div class="bg-coffee-50 dark:bg-coffee-950 rounded-3xl shadow-2xl w-full max-w-3xl my-auto border border-coffee-100 dark:border-coffee-800 relative">
             <button onclick="closeMy()" aria-label="Close" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-coffee-100 dark:bg-coffee-800 text-coffee-800 dark:text-coffee-100 hover:bg-coffee-200 dark:hover:bg-coffee-700 font-bold text-sm transition">✕</button>
             <div class="p-5 sm:p-8">
-                <h2 class="font-display text-2xl sm:text-3xl font-bold tracking-tight text-coffee-900 dark:text-white pr-10">Add my own recipe</h2>
+                <h2 class="font-display text-2xl sm:text-3xl font-bold tracking-tight text-coffee-900 dark:text-white pr-10">New Recipe</h2>
                 <p class="text-xs sm:text-sm text-gray-600 dark:text-coffee-200 mt-1 max-w-2xl">Enter your drink and its ingredients. The assistant drafts the steps, barista notes and name ideas. Costs come from your sheet prices. Saving creates a new tab from the recipe template (admin only).</p>
 
                 <div class="mt-5 bg-white dark:bg-coffee-900 rounded-2xl border border-coffee-100 dark:border-coffee-800 p-4 sm:p-5">
@@ -440,7 +441,7 @@
                         </div>
                         <div class="col-span-2">
                             <label for="myCat" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Category</label>
-                            <select id="myCat" onchange="myTouch()" class="sel w-full"><option value="auto">Auto (assistant picks)</option><option>Basic Coffee</option><option>Signature Coffee</option><option>Coffee Fusion</option><option>Tea Series</option><option>Non-Coffee</option><option>Frappe</option><option>Milkshake</option><option>Smoothie</option><option>Refreshers</option><option>Mocktail</option></select>
+                            <select id="myCat" onchange="myTouch()" class="sel w-full"><option value="auto">Auto (assistant picks)</option><option>Basic Coffee</option><option>Basic Application</option><option>Signature Coffee</option><option>Coffee Fusion</option><option>Tea Series</option><option>Non-Coffee</option><option>Frappe</option><option>Milkshake</option><option>Smoothie</option><option>Refreshers</option><option>Mocktail</option></select>
                         </div>
                         <div class="col-span-1 sm:col-span-2">
                             <label for="myTemp" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Temperature</label>
@@ -490,9 +491,9 @@
     <!-- Recipe Builder -->
     <div id="aiModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] hidden flex items-start justify-center p-3 sm:p-6 overflow-y-auto no-print">
         <div class="bg-coffee-50 dark:bg-coffee-950 rounded-3xl shadow-2xl w-full max-w-5xl my-auto border border-coffee-100 dark:border-coffee-800 relative">
-            <button onclick="closeAi()" aria-label="Close Recipe Builder" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-coffee-100 dark:bg-coffee-800 text-coffee-800 dark:text-coffee-100 hover:bg-coffee-200 dark:hover:bg-coffee-700 font-bold text-sm transition">✕</button>
+            <button onclick="closeAi()" aria-label="Close AI Recipe Builder" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-coffee-100 dark:bg-coffee-800 text-coffee-800 dark:text-coffee-100 hover:bg-coffee-200 dark:hover:bg-coffee-700 font-bold text-sm transition">✕</button>
             <div class="p-5 sm:p-8">
-                <h2 class="font-display text-2xl sm:text-3xl font-bold tracking-tight text-coffee-900 dark:text-white pr-10">Recipe Builder</h2>
+                <h2 class="font-display text-2xl sm:text-3xl font-bold tracking-tight text-coffee-900 dark:text-white pr-10">AI Recipe Builder</h2>
                 <p class="text-xs sm:text-sm text-gray-600 dark:text-coffee-200 mt-1 max-w-2xl">Searches the web about an ingredient, then designs several recipes using only the items and prices in your Master BRC sheet. Costs come from your sheet, not from the AI.</p>
 
                 <div class="panel p-4 sm:p-5 mt-5">
@@ -505,7 +506,7 @@
                             <datalist id="aiIngList"></datalist>
                         </div>
                         <div>
-                            <label for="aiCount" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Recipes</label>
+                            <label for="aiCount" id="aiCountLbl" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Recipes</label>
                             <select id="aiCount" class="sel w-full"><option value="6">6 ideas</option><option value="9">9 ideas</option><option value="12" selected>12 ideas</option></select>
                         </div>
                         <div>
@@ -518,7 +519,11 @@
                         </div>
                         <div>
                             <label for="aiCat" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Category</label>
-                            <select id="aiCat" class="sel w-full"><option value="any">Any</option><option>Basic Coffee</option><option>Signature Coffee</option><option>Coffee Fusion</option><option>Tea Series</option><option>Non-Coffee</option><option>Frappe</option><option>Milkshake</option><option>Smoothie</option><option>Refreshers</option><option>Mocktail</option></select>
+                            <select id="aiCat" onchange="aiCatChanged()" class="sel w-full"><option value="any">Any</option><option>Basic Coffee</option><option>Basic Application</option><option>Signature Coffee</option><option>Coffee Fusion</option><option>Tea Series</option><option>Non-Coffee</option><option>Frappe</option><option>Milkshake</option><option>Smoothie</option><option>Refreshers</option><option>Mocktail</option></select>
+                        </div>
+                        <div id="aiBasesBox" class="hidden col-span-2 sm:col-span-4">
+                            <p class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Basic Application: which base drinks? <span class="font-normal text-gray-500 dark:text-coffee-200">(one simple recipe per base, named like "PEACH REFRESHER". Hot is made for Coffee, Tea, Matcha and Milk.)</span></p>
+                            <div class="flex flex-wrap gap-2"><label class="inline-flex items-center gap-1.5 text-xs text-coffee-900 dark:text-coffee-50 bg-coffee-50 dark:bg-coffee-950/60 border border-coffee-200 dark:border-coffee-700 rounded-full px-3 py-1.5 cursor-pointer"><input type="checkbox" class="ai-base" value="coffee" checked> Coffee latte</label><label class="inline-flex items-center gap-1.5 text-xs text-coffee-900 dark:text-coffee-50 bg-coffee-50 dark:bg-coffee-950/60 border border-coffee-200 dark:border-coffee-700 rounded-full px-3 py-1.5 cursor-pointer"><input type="checkbox" class="ai-base" value="tea" checked> Tea</label><label class="inline-flex items-center gap-1.5 text-xs text-coffee-900 dark:text-coffee-50 bg-coffee-50 dark:bg-coffee-950/60 border border-coffee-200 dark:border-coffee-700 rounded-full px-3 py-1.5 cursor-pointer"><input type="checkbox" class="ai-base" value="matcha" checked> Matcha latte</label><label class="inline-flex items-center gap-1.5 text-xs text-coffee-900 dark:text-coffee-50 bg-coffee-50 dark:bg-coffee-950/60 border border-coffee-200 dark:border-coffee-700 rounded-full px-3 py-1.5 cursor-pointer"><input type="checkbox" class="ai-base" value="milk" checked> Milk drink</label><label class="inline-flex items-center gap-1.5 text-xs text-coffee-900 dark:text-coffee-50 bg-coffee-50 dark:bg-coffee-950/60 border border-coffee-200 dark:border-coffee-700 rounded-full px-3 py-1.5 cursor-pointer"><input type="checkbox" class="ai-base" value="refresher" checked> Refresher</label><label class="inline-flex items-center gap-1.5 text-xs text-coffee-900 dark:text-coffee-50 bg-coffee-50 dark:bg-coffee-950/60 border border-coffee-200 dark:border-coffee-700 rounded-full px-3 py-1.5 cursor-pointer"><input type="checkbox" class="ai-base" value="mocktail" checked> Mocktail</label><label class="inline-flex items-center gap-1.5 text-xs text-coffee-900 dark:text-coffee-50 bg-coffee-50 dark:bg-coffee-950/60 border border-coffee-200 dark:border-coffee-700 rounded-full px-3 py-1.5 cursor-pointer"><input type="checkbox" class="ai-base" value="frappe" checked> Frappe</label><label class="inline-flex items-center gap-1.5 text-xs text-coffee-900 dark:text-coffee-50 bg-coffee-50 dark:bg-coffee-950/60 border border-coffee-200 dark:border-coffee-700 rounded-full px-3 py-1.5 cursor-pointer"><input type="checkbox" class="ai-base" value="smoothie" checked> Smoothie</label></div>
                         </div>
                         <div class="col-span-2 sm:col-span-4">
                             <label for="aiDirection" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Direction <span class="font-normal text-gray-500 dark:text-coffee-200">(optional, links allowed)</span></label>
@@ -1026,6 +1031,7 @@
         }
         function catClass(cat) {
             const c = String(cat || '').toLowerCase();
+            if (c.indexOf('application') >= 0) return 'cat-basicapp';
             if (c.indexOf('basic') >= 0) return 'cat-basic';
             if (c.indexOf('signature') >= 0) return 'cat-signature';
             if (c.indexOf('tea') >= 0) return 'cat-tea';
@@ -1932,6 +1938,13 @@
             box.classList.remove('hidden');
         }
 
+        function aiCatChanged() {
+            const basic = document.getElementById('aiCat').value === 'Basic Application';
+            document.getElementById('aiBasesBox').classList.toggle('hidden', !basic);
+            const cnt = document.getElementById('aiCount');
+            cnt.disabled = basic; cnt.style.opacity = basic ? '.45' : '';
+            cnt.title = basic ? 'Basic Application makes one recipe per ticked base drink' : '';
+        }
         async function runAi() {
             if (aiBusy) return;
             const ing = document.getElementById('aiIngredient').value.trim();
@@ -1946,6 +1959,10 @@
                 size: document.getElementById('aiSize').value,
                 ideas: document.getElementById('aiIdeas').value
             };
+            if (opts.category === 'Basic Application') {
+                opts.bases = Array.prototype.map.call(document.querySelectorAll('.ai-base:checked'), function (c) { return c.value; });
+                if (!opts.bases.length) { aiShowErr('Tick at least one base drink for the Basic Application.'); return; }
+            }
             const btn = document.getElementById('aiRunBtn');
             aiBusy = true;
             btn.disabled = true; btn.textContent = 'Working...'; btn.style.opacity = '.7';
