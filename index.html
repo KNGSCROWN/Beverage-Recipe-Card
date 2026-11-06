@@ -500,7 +500,7 @@
                     <div class="grid grid-cols-2 sm:grid-cols-6 gap-3">
                         <div class="col-span-2 sm:col-span-2">
                             <label for="aiIngredient" class="block text-xs font-semibold text-coffee-800 dark:text-coffee-100 mb-1">Ingredient</label>
-                            <input id="aiIngredient" list="aiIngList" type="text" autocomplete="off" placeholder="Yuzu, Ube, Pistachio, or pick from your list"
+                            <input id="aiIngredient" list="aiIngList" type="text" autocomplete="off" placeholder="Yuzu, Ube, or two items like: Young Coconut Puree, Vanilla Ice Cream"
                                 onkeydown="if(event.key==='Enter')runAi()"
                                 class="w-full px-4 py-3 bg-coffee-50 dark:bg-coffee-950/60 border border-coffee-200 dark:border-coffee-700 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 outline-none dark:text-white">
                             <datalist id="aiIngList"></datalist>
@@ -973,10 +973,7 @@
                                 <div class="text-[10px] uppercase tracking-wider font-semibold text-gray-500 dark:text-coffee-200/80">${hasMenuPrice(r) ? 'Menu price' : 'Suggested price'}</div>
                                 <div class="font-display font-bold text-lg text-emerald-700 dark:text-emerald-300">${esc(money(hasMenuPrice(r) ? r.menuPrice : r.price))}</div>
                             </div>` : '<div></div>'}
-                            <div class="text-right">
-                                <div class="text-[10px] uppercase tracking-wider font-semibold text-gray-500 dark:text-coffee-200/80">Cost</div>
-                                <div class="font-display font-semibold text-sm text-coffee-800 dark:text-amber-300">${esc(money(r.totalCost || 'P0.00'))}</div>
-                            </div>
+                            ${listCostHtml(r)}
                         </div>` : ''}
                     </div>
                 </div>`;
@@ -1239,6 +1236,72 @@
             return r.margin || '';
         }
 
+        // ---------- Net-of-VAT costing: Dine In (DI) and Take Out (TO) ----------
+        // Prices and costs both include 12% VAT, so both are divided by 1.12 and compared net to net.
+        // DI = ingredients only (no cup and lid). TO = everything, with the cup and lid.
+        const VAT_RATE = 1.12;
+        function vatCosting(r) {
+            const menu = parseMoney(r.menuPrice), total = parseMoney(r.totalCost);
+            if (menu == null || !(menu > 0) || total == null) return null;
+            let cup = 0;
+            (r.ingredients || []).forEach(function (i) {
+                if (/\bCUP\b|\bLID\b/i.test(String(i.item || ''))) cup += parseMoney(i.cost) || 0;
+            });
+            const net = menu / VAT_RATE, to = total / VAT_RATE, di = Math.max(0, total - cup) / VAT_RATE;
+            return {
+                net: net, di: di, to: to,
+                diPct: di / net * 100, toPct: to / net * 100,
+                diGm: net - di, toGm: net - to,
+                diGmPct: (net - di) / net * 100, toGmPct: (net - to) / net * 100
+            };
+        }
+        function pct1(n) { return n.toFixed(1) + '%'; }
+        function pesoM(n) { return money(peso(n)); }
+
+        function vatTableModalHtml(r) {
+            const v = vatCosting(r); if (!v) return '';
+            const cell = function (t, warn) { return '<b class="text-right whitespace-nowrap ' + (warn ? 'text-red-300' : 'text-white') + '">' + esc(t) + '</b>'; };
+            const lab = function (t) { return '<span class="text-coffee-200">' + t + '</span>'; };
+            const head = function (t) { return '<span class="text-right text-[11px] font-semibold text-coffee-200">' + t + '</span>'; };
+            return '<div class="w-full text-[12px]">' +
+                '<div class="flex justify-between items-baseline mb-2.5"><span class="text-coffee-200">Price less VAT (÷ 1.12)</span><b class="text-white">' + esc(pesoM(v.net)) + '</b></div>' +
+                '<div class="grid gap-x-4 gap-y-1.5 items-baseline" style="grid-template-columns:1fr auto auto">' +
+                    '<span></span>' + head('Dine In') + head('Take Out') +
+                    lab('Cost') + cell(pesoM(v.di)) + cell(pesoM(v.to)) +
+                    lab('Profit') + cell(pesoM(v.diGm)) + cell(pesoM(v.toGm)) +
+                    lab('Food cost') + cell(pct1(v.diPct), v.diPct > 30) + cell(pct1(v.toPct), v.toPct > 30) +
+                    lab('GM %') + cell(pct1(v.diGmPct)) + cell(pct1(v.toGmPct)) +
+                '</div>' +
+                '<div class="text-[10px] text-coffee-200/70 mt-2.5 leading-snug">Net of 12% VAT. Dine In = no cup &amp; lid. Take Out = with cup &amp; lid.</div>' +
+            '</div>';
+        }
+
+        function vatTablePrintHtml(r) {
+            const v = vatCosting(r); if (!v) return '';
+            const td = 'padding:3px 0;font-size:12px;';
+            const lab = function (t) { return '<td style="' + td + 'color:var(--soft)">' + t + '</td>'; };
+            const cell = function (t, warn) { return '<td style="' + td + 'text-align:right;font-weight:700;padding-left:14px;white-space:nowrap;color:' + (warn ? '#f4a58f' : '#fff6ea') + '">' + esc(t) + '</td>'; };
+            const head = function (t) { return '<td style="' + td + 'text-align:right;font-weight:600;padding-left:14px;color:var(--soft)">' + t + '</td>'; };
+            return '<div style="width:100%">' +
+                '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span style="color:var(--soft)">Price less VAT (÷ 1.12)</span><b style="color:#fff6ea">' + esc(pesoM(v.net)) + '</b></div>' +
+                '<table style="width:100%;border-collapse:collapse">' +
+                    '<tr><td></td>' + head('Dine In') + head('Take Out') + '</tr>' +
+                    '<tr>' + lab('Cost') + cell(pesoM(v.di)) + cell(pesoM(v.to)) + '</tr>' +
+                    '<tr>' + lab('Profit') + cell(pesoM(v.diGm)) + cell(pesoM(v.toGm)) + '</tr>' +
+                    '<tr>' + lab('Food cost') + cell(pct1(v.diPct), v.diPct > 30) + cell(pct1(v.toPct), v.toPct > 30) + '</tr>' +
+                    '<tr>' + lab('GM %') + cell(pct1(v.diGmPct)) + cell(pct1(v.toGmPct)) + '</tr>' +
+                '</table>' +
+                '<div style="font-size:10px;color:var(--soft);margin-top:6px;opacity:.8">Net of 12% VAT. Dine In = no cup &amp; lid. Take Out = with cup &amp; lid.</div>' +
+            '</div>';
+        }
+
+        function listCostHtml(r) {
+            const v = vatCosting(r);
+            const lbl = 'text-[10px] uppercase tracking-wider font-semibold text-gray-500 dark:text-coffee-200/80';
+            if (!v) return '<div class="text-right"><div class="' + lbl + '">Cost</div><div class="font-display font-semibold text-sm text-coffee-800 dark:text-amber-300">' + esc(money(r.totalCost || 'P0.00')) + '</div></div>';
+            return '<div class="text-right"><div class="' + lbl + '">Food cost</div><div class="font-display font-semibold text-sm text-coffee-800 dark:text-amber-300 whitespace-nowrap">DI ' + pct1(v.diPct) + ' · TO ' + pct1(v.toPct) + '</div></div>';
+        }
+
         // Cells for the pricing panel: Cost | Profit | Food cost  (food cost turns red above the 30% target)
         function priceCells(r) {
             const tag = r.batch > 1 ? ' (×' + r.batch + ')' : '';
@@ -1332,7 +1395,7 @@
                 ${showPrices ? `<div class="price-wrap"><div class="price">
                   ${(hasMenuPrice(r) || r.price) ? `<div class="lbl">${hasMenuPrice(r) ? 'Menu price' + (r.batch > 1 ? ' (×' + r.batch + ')' : '') : 'Suggested price'}</div>
                   <div class="hero">${esc(money(hasMenuPrice(r) ? r.menuPrice : r.price))}</div>
-                  <div class="stats">${priceCells(r).map(function (c) { return `<div class="stat"><small>${esc(c.label)}</small><b class="${c.warn ? 'warn' : ''}">${esc(c.value)}</b></div>`; }).join('')}</div>` : `<div class="lbl">Total cost${r.batch > 1 ? ' (×' + r.batch + ')' : ''}</div>
+                  <div class="stats">${vatTablePrintHtml(r) || priceCells(r).map(function (c) { return `<div class="stat"><small>${esc(c.label)}</small><b class="${c.warn ? 'warn' : ''}">${esc(c.value)}</b></div>`; }).join('')}</div>` : `<div class="lbl">Total cost${r.batch > 1 ? ' (×' + r.batch + ')' : ''}</div>
                   <div class="hero">${esc(money(r.totalCost || 'P0.00'))}</div>`}
                 </div></div>` : ''}
               </aside>
@@ -1781,7 +1844,7 @@
                                 <div class="text-[11px] uppercase tracking-[.09em] font-medium text-coffee-200">${hasMenuPrice(r) ? 'Menu price' + (r.batch > 1 ? ' (×' + r.batch + ')' : '') : 'Suggested price (30% cost)'}</div>
                                 <div class="font-display text-4xl font-black text-amber-300 leading-none mt-1.5">${esc(money(hasMenuPrice(r) ? r.menuPrice : r.price))}</div>
                                 <div class="flex mt-3.5 pt-3 border-t border-white/10">
-                                    ${priceCells(r).map(function (c, i) { return `<div class="flex-1 min-w-0 ${i ? 'ml-3 pl-3 border-l border-white/10' : ''}"><div class="text-[11px] text-coffee-200 mb-0.5">${esc(c.label)}</div><div class="text-base font-bold whitespace-nowrap ${c.warn ? 'text-red-300' : 'text-white'}">${esc(c.value)}</div></div>`; }).join('')}
+                                    ${vatTableModalHtml(r) || priceCells(r).map(function (c, i) { return `<div class="flex-1 min-w-0 ${i ? 'ml-3 pl-3 border-l border-white/10' : ''}"><div class="text-[11px] text-coffee-200 mb-0.5">${esc(c.label)}</div><div class="text-base font-bold whitespace-nowrap ${c.warn ? 'text-red-300' : 'text-white'}">${esc(c.value)}</div></div>`; }).join('')}
                                 </div>` : `
                                 <div class="text-[11px] uppercase tracking-[.09em] font-medium text-coffee-200">Total cost${r.batch > 1 ? ' (×' + r.batch + ')' : ''}</div>
                                 <div class="font-display text-4xl font-black text-amber-300 leading-none mt-1.5">${esc(money(r.totalCost || 'P0.00'))}</div>`}
@@ -2041,9 +2104,17 @@
             }
         }
 
-        function aiStat(label, value, warn) {
+        function aiStat(label, value, warn, sub) {
             return '<div class="flex-1 min-w-0"><div class="text-[11px] text-gray-500 dark:text-coffee-200">' + esc(label) + '</div>' +
-                '<div class="text-sm font-bold whitespace-nowrap ' + (warn ? 'text-red-600 dark:text-red-300' : 'text-coffee-900 dark:text-white') + '">' + esc(value) + '</div></div>';
+                '<div class="text-sm font-bold whitespace-nowrap ' + (warn ? 'text-red-600 dark:text-red-300' : 'text-coffee-900 dark:text-white') + '">' + esc(value) + '</div>' +
+                (sub ? '<div class="text-[10px] text-gray-500 dark:text-coffee-200 whitespace-nowrap">' + esc(sub) + '</div>' : '') + '</div>';
+        }
+        function aiCostStats(r) {
+            const v = vatCosting(r);
+            if (!v) return aiStat('Cost', money(r.totalCost)) + aiStat('Menu price', money(r.menuPrice)) + aiStat('Food cost', r.foodCostPct, parseFloat(r.foodCostPct) > 30);
+            return aiStat('Menu price', money(r.menuPrice), false, 'less VAT ' + pesoM(v.net)) +
+                aiStat('Dine In', pct1(v.diPct), v.diPct > 30, pesoM(v.di) + ' net') +
+                aiStat('Take Out', pct1(v.toPct), v.toPct > 30, pesoM(v.to) + ' net');
         }
 
         function aiCardHtml(r, i) {
@@ -2056,7 +2127,7 @@
                 '<p class="text-xs text-gray-600 dark:text-coffee-200 mt-1.5 flex-grow">' + esc(r.concept || '') + '</p>' +
                 ((r.outside || []).length ? '<p class="text-[11px] mt-2 text-amber-800 dark:text-amber-300">💡 Outside idea: ' + esc(r.outside.map(function (o) { return o.item; }).join(', ')) + '</p>' : '') +
                 '<div class="flex gap-3 mt-4 pt-3 border-t border-coffee-100 dark:border-coffee-800">' +
-                    aiStat('Cost', money(r.totalCost)) + aiStat('Menu price', money(r.menuPrice)) + aiStat('Food cost', r.foodCostPct, fcWarn) +
+                    aiCostStats(r) +
                 '</div>' +
                 '<p class="text-[11px] text-gray-500 dark:text-coffee-200 mt-2">' + (r.ingredients || []).length + ' ingredients' +
                     (warns ? ' · <span class="text-amber-700 dark:text-amber-300">' + warns + ' note' + (warns > 1 ? 's' : '') + '</span>' : '') + '</p>' +
@@ -2192,7 +2263,14 @@
             const stat = function (label, val) {
                 return '<div><p class="text-[11px] text-gray-500 dark:text-coffee-200">' + label + '</p><p class="font-display text-lg font-bold text-coffee-900 dark:text-white">' + val + '</p></div>';
             };
-            box.innerHTML = '<div class="grid grid-cols-3 gap-3 text-center mb-3">' + stat('Cost', money(r.totalCost)) + stat('Menu price', money(r.menuPrice)) + stat('Food cost', esc(r.foodCostPct)) + '</div>' +
+            box.innerHTML = '<div class="grid grid-cols-3 gap-3 text-center mb-3">' + (function () {
+                const v = vatCosting(r);
+                if (!v) return stat('Cost', money(r.totalCost)) + stat('Menu price', money(r.menuPrice)) + stat('Food cost', esc(r.foodCostPct));
+                const sub = function (t) { return '<span class="block text-[10px] font-normal text-gray-500 dark:text-coffee-200">' + t + '</span>'; };
+                return stat('Menu price', money(r.menuPrice) + sub('less VAT ' + pesoM(v.net))) +
+                    stat('Dine In', pct1(v.diPct) + sub(pesoM(v.di) + ' net')) +
+                    stat('Take Out', pct1(v.toPct) + sub(pesoM(v.to) + ' net'));
+            })() + '</div>' +
                 '<table class="w-full text-xs text-coffee-900 dark:text-coffee-100"><tbody>' + rows + '</tbody></table>' + warns +
                 '<p class="text-[11px] text-gray-500 dark:text-coffee-200 mt-3">Costs use your sheet prices. Items shown here are what will be saved, with the right cup added.</p>';
             box.classList.remove('hidden');
