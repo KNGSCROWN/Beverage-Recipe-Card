@@ -20,6 +20,7 @@
     <!-- PDF tools (used by the Download PDF button) -->
     <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -100,6 +101,44 @@
             body > *:not(#printArea) { display:none !important; }
             #printArea { display:flex !important; position:static !important; align-items:center; justify-content:center; width:297mm; height:209mm; padding:8mm; overflow:hidden; }
         }
+
+        /* ===== Small recipe card (5 x 4 in, landscape) ===== */
+        #smallArea { display:none; }
+        #smallArea.capturing { display:block; position:fixed; left:0; top:0; width:480px; z-index:9998; }
+        #smallPrint { display:none; }
+        #smallPrint img { display:block; width:5in; height:4in; }
+        .sc { --esp:#2b1d16; --crema:#e0a846; --ink:#2a211b; --muted:#7d7066; --paper:#fffdf9; --soft:#b9a791; --k:1; --disp:'Bricolage Grotesque','Instrument Sans',system-ui,sans-serif;
+              width:480px; height:384px; display:flex; flex-direction:row; background:var(--paper); color:var(--ink); font-family:'Instrument Sans',system-ui,Arial,sans-serif; overflow:hidden; border-radius:14px; text-align:left; }
+        .sc, .sc * { box-sizing:border-box; }
+        .sc.flat { border-radius:0; }
+        .sc-head { flex:none; width:158px; background:var(--esp); color:#fff6ea; padding:14px; display:flex; flex-direction:column; }
+        .sc-top { display:flex; flex-direction:column; gap:2px; font-size:7.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--soft); font-weight:600; }
+        .sc-top b { color:var(--crema); font-weight:700; }
+        .sc-title { margin:9px 0 0; font-family:var(--disp); font-weight:700; letter-spacing:-.02em; line-height:1.05; color:#fff6ea; overflow-wrap:anywhere; }
+        .sc-meta { display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin-top:9px; }
+        .sc-chip { padding:2px 7px; border-radius:999px; background:var(--crema); color:var(--esp); font-size:8.5px; font-weight:700; }
+        .sc-chip.ghost { background:transparent; border:1px solid #5a4538; color:#e6d6c2; font-weight:600; }
+        .sc-price { width:100%; font-family:var(--disp); font-size:15px; font-weight:700; color:var(--crema); margin-top:2px; }
+        .sc-photo { flex:1; min-height:70px; margin-top:11px; border-radius:11px; background:#4a362a center 30% / cover no-repeat; display:flex; align-items:center; justify-content:center; }
+        .sc-body { flex:1; min-width:0; min-height:0; overflow:hidden; padding:16px 20px; display:flex; flex-direction:column; gap:calc(8px * var(--k)); }
+        .sc-cols { flex:1; min-height:0; display:flex; flex-direction:column; gap:calc(10px * var(--k)); }
+        .sc-ing, .sc-method { flex:none; min-width:0; }
+        .sc-h { font-family:var(--disp); font-size:calc(11.5px * var(--k)); font-weight:700; color:var(--esp); margin:0 0 2px; padding-bottom:3px; border-bottom:1px solid var(--ink); }
+        .sc-row { display:flex; align-items:flex-end; gap:5px; padding:calc(2.8px * var(--k)) 0; }
+        .sc-row .nm { font-size:calc(10px * var(--k)); line-height:1.22; }
+        .sc-row .dt { flex:1; min-width:8px; height:1px; margin-bottom:3px; border-bottom:1.5px dotted #cdbfaa; }
+        .sc-row .am { font-size:calc(10px * var(--k)); font-weight:700; white-space:nowrap; }
+        .sc.nomethod .sc-h { font-size:14px; }
+        .sc.nomethod .sc-row { padding:5px 0; }
+        .sc.nomethod .sc-row .nm, .sc.nomethod .sc-row .am { font-size:12px; }
+        .sc-call { flex:none; margin-top:auto; background:#f6ecdc; border-left:3px solid var(--crema); border-radius:0 8px 8px 0; padding:calc(6px * var(--k)) 11px; font-size:calc(10.5px * var(--k)); font-weight:600; line-height:1.3; color:var(--esp); }
+        .sc-step { display:flex; gap:6px; padding:calc(2.2px * var(--k)) 0; font-size:calc(9px * var(--k)); line-height:1.36; }
+        .sc-step i { font-style:normal; flex:none; width:calc(12px * var(--k)); height:calc(12px * var(--k)); border-radius:50%; background:var(--esp); color:#fff6ea; font-size:calc(7.5px * var(--k)); font-weight:700; text-align:center; line-height:calc(12px * var(--k)); margin-top:1px; }
+        @media print {
+            body.printing-small > *:not(#smallPrint) { display:none !important; }
+            body.printing-small #smallPrint { display:block !important; position:static !important; width:5in; height:4in; overflow:hidden; }
+        }
+
         /* ===== Page styling (everything except the recipe card) ===== */
         body { font-family:'Instrument Sans',system-ui,-apple-system,'Segoe UI',Arial,sans-serif; }
         .font-display { font-family:'Bricolage Grotesque','Instrument Sans',system-ui,sans-serif; letter-spacing:-.01em; }
@@ -391,6 +430,17 @@
                 <button onclick="closePdfPicker()" aria-label="Close" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-white font-bold">✕</button>
                 <h2 class="font-display text-xl font-bold text-coffee-900 dark:text-white">📚 Menu Book PDF <span id="pdfPickTotal" class="text-xs font-semibold text-gray-500 dark:text-coffee-200 ml-1"></span></h2>
                 <p class="text-xs text-gray-600 dark:text-coffee-200 mt-1">Tick the categories or drinks to include. One landscape page per recipe.</p>
+                <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold text-coffee-800 dark:text-coffee-100">
+                    <span>Format</span>
+                    <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="pdfFormat" value="a4" checked onchange="pdfFormatChanged()" class="h-4 w-4 accent-amber-500">Full cards (A4)</label>
+                    <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="pdfFormat" value="small" onchange="pdfFormatChanged()" class="h-4 w-4 accent-amber-500">Small cards (5×4 in)</label>
+                    <label id="pdfSmallMethodWrap" class="hidden flex items-center gap-1.5 cursor-pointer"><input type="checkbox" id="pdfSmallMethod" checked class="h-4 w-4 accent-amber-500">Include method</label>
+                </div>
+                <div id="pdfSmallTypeWrap" class="hidden mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold text-coffee-800 dark:text-coffee-100">
+                    <span>File</span>
+                    <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="pdfSmallType" value="pdf" checked onchange="pdfFormatChanged()" class="h-4 w-4 accent-amber-500">PDF (one file)</label>
+                    <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="pdfSmallType" value="png" onchange="pdfFormatChanged()" class="h-4 w-4 accent-amber-500">PNG images (ZIP)</label>
+                </div>
                 <div class="flex flex-wrap items-center gap-2 mt-4">
                     <button type="button" onclick="pdfPickAll(true)" class="pill">Select all</button>
                     <button type="button" onclick="pdfPickAll(false)" class="pill">Clear</button>
@@ -412,6 +462,30 @@
 
     <!-- Printable recipe card (filled by printRecipe) -->
     <div id="printArea"></div>
+    <div id="smallArea"></div>
+    <div id="smallPrint"></div>
+
+    <!-- Small recipe card (5 x 4 in) -->
+    <div id="smallModal" onclick="if(event.target===this)closeSmallCard()" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[56] hidden flex items-start justify-center p-3 overflow-y-auto no-print">
+        <div class="bg-white dark:bg-coffee-900 rounded-3xl shadow-2xl w-full max-w-xl my-auto p-5 relative border border-coffee-100 dark:border-coffee-800">
+            <button onclick="closeSmallCard()" aria-label="Close" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-white font-bold">✕</button>
+            <h2 class="font-display text-lg font-bold text-coffee-900 dark:text-white">🗂️ Small recipe card <span class="text-xs font-semibold text-gray-500 dark:text-coffee-200 ml-1">5 × 4 in</span></h2>
+            <div class="mt-4 flex justify-center">
+                <div id="scWrap" style="width:480px;height:384px;overflow:visible"><div id="scPreview" style="box-shadow:0 14px 30px -14px rgba(43,29,22,.55);border-radius:14px"></div></div>
+            </div>
+            <p id="scMsg" class="mt-3 text-[11px] text-amber-700 dark:text-amber-300 min-h-[1rem]"></p>
+            <div class="mt-2 space-y-2 text-xs font-semibold text-coffee-800 dark:text-coffee-100">
+                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="scMethod" checked onchange="renderSmallPreview()" class="h-4 w-4 accent-amber-500">Include method steps</label>
+                <label id="scPriceWrap" class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="scPrice" onchange="renderSmallPreview()" class="h-4 w-4 accent-amber-500">Show menu price (manager only)</label>
+                <input type="text" id="scNote" maxlength="90" oninput="renderSmallPreview()" placeholder="Optional note, e.g. Garnish with lemon slices and mint" class="w-full px-3 py-2 rounded-lg border border-coffee-200 dark:border-coffee-700 bg-white dark:bg-coffee-800 dark:text-white text-xs font-normal">
+            </div>
+            <div class="mt-4 grid grid-cols-3 gap-2">
+                <button onclick="smallExport('pdf')" class="btn-solid">⬇️ PDF</button>
+                <button onclick="smallExport('png')" class="pill">🖼️ PNG</button>
+                <button onclick="smallExport('print')" class="pill">🖨️ Print</button>
+            </div>
+        </div>
+    </div>
     <div id="pdfOverlay" class="fixed inset-0 z-[9999] hidden bg-coffee-950/95 flex items-center justify-center no-print">
         <div class="text-white text-sm font-semibold flex items-center space-x-3">
             <div class="animate-spin rounded-full h-6 w-6 border-4 border-amber-400 border-t-transparent"></div>
@@ -1722,7 +1796,101 @@
             const cats = g.order.filter(function (c) { return list.some(function (r) { return (r.category || 'Other') === c; }); });
             const label = cats.length === g.order.length ? '' : (cats.length <= 2 ? cats.join(', ') : 'Selected');
             closePdfPicker();
-            downloadMenuBook(list, label);
+            if (pdfFormat() === 'small') downloadSmallBook(list, label, document.getElementById('pdfSmallMethod').checked, pdfSmallType());
+            else downloadMenuBook(list, label);
+        }
+        function pdfFormat() {
+            const c = document.querySelector('input[name="pdfFormat"]:checked');
+            return c ? c.value : 'a4';
+        }
+        function pdfSmallType() {
+            const c = document.querySelector('input[name="pdfSmallType"]:checked');
+            return c ? c.value : 'pdf';
+        }
+        function pdfFormatChanged() {
+            const small = pdfFormat() === 'small';
+            document.getElementById('pdfSmallMethodWrap').classList.toggle('hidden', !small);
+            document.getElementById('pdfSmallTypeWrap').classList.toggle('hidden', !small);
+            document.getElementById('pdfPickGo').textContent = !small ? 'Download PDF' : (pdfSmallType() === 'png' ? 'Download PNGs' : 'Download small cards');
+        }
+        function saveBlob(blob, name) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+        }
+        function canvasToPngBlob(canvas) {
+            return new Promise(function (resolve) { canvas.toBlob(resolve, 'image/png'); });
+        }
+
+        // One PDF with a 5 x 4 in page per recipe (the small card, no prices)
+        async function downloadSmallBook(list, label, withMethod, fileType) {
+            list = list.slice();
+            const asPng = fileType === 'png';
+            if (!list.length || !pdfToolsReady()) return;
+            if (asPng && list.length > 1 && !window.JSZip) { showToast('⚠️ ZIP tool did not load. Check your internet and try again.'); return; }
+            if (list.length > 15 && !confirm('This will build ' + list.length + ' small cards. It can take a minute or two. Continue?')) return;
+
+            bookCancelled = false;
+            const msg = document.getElementById('pdfMsg');
+            const scrollY = window.scrollY;
+            document.getElementById('pdfCancel').classList.remove('hidden');
+            document.getElementById('pdfOverlay').classList.remove('hidden');
+            window.scrollTo(0, 0);
+
+            let skipped = 0, done = 0;
+            try {
+                const zip = (asPng && list.length > 1) ? new window.JSZip() : null;
+                const usedNames = {};
+                const pdf = asPng ? null : new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: [SMALL_W_MM, SMALL_H_MM] });
+                const opts = { method: !!withMethod, price: false, note: '' };
+                for (let i = 0; i < list.length; i++) {
+                    if (bookCancelled) break;
+                    msg.textContent = 'Creating small cards... ' + (i + 1) + ' of ' + list.length;
+                    const out = await renderSmallCanvas(list[i], opts, 3);
+                    if (asPng) {
+                        let nm = ((fullName(list[i]) || 'Recipe') + ' - Small Card').replace(/[\\\/:*?"<>|]/g, '-');
+                        usedNames[nm] = (usedNames[nm] || 0) + 1;
+                        if (usedNames[nm] > 1) nm += ' (' + usedNames[nm] + ')';
+                        const blob = await canvasToPngBlob(out.canvas);
+                        if (zip) zip.file(nm + '.png', blob);
+                        else saveBlob(blob, nm + '.png');
+                    } else {
+                        if (done > 0) pdf.addPage([SMALL_W_MM, SMALL_H_MM], 'landscape');
+                        pdf.addImage(out.canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, SMALL_W_MM, SMALL_H_MM);
+                    }
+                    if (out.photoSkipped) skipped++;
+                    done++;
+                    const area = document.getElementById('smallArea');
+                    area.classList.remove('capturing');
+                    area.innerHTML = '';
+                    await new Promise(function (res) { setTimeout(res, 0); });
+                }
+                if (bookCancelled || done === 0) {
+                    showToast('Small cards cancelled');
+                } else {
+                    const baseName = (label ? 'Master BRC - ' + String(label).replace(/[\\/:*?"<>|]/g, '-') : 'Master BRC Small Cards') + ' (' + done + ' small cards)';
+                    if (asPng) {
+                        if (zip) {
+                            msg.textContent = 'Packing ZIP...';
+                            saveBlob(await zip.generateAsync({ type: 'blob', compression: 'STORE' }), baseName + '.zip');
+                        }
+                    } else {
+                        pdf.save(baseName + '.pdf');
+                    }
+                    showToast(skipped ? '🗂️ Small cards saved (' + skipped + ' without photo)' : '🗂️ Small cards downloaded');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('⚠️ Could not create the small cards: ' + (err && err.message ? err.message : err));
+            } finally {
+                endSmallCapture();
+                document.getElementById('pdfCancel').classList.add('hidden');
+                window.scrollTo(0, scrollY);
+            }
         }
         document.addEventListener('keydown', function (e) {
             const m = document.getElementById('pdfPickModal');
@@ -1777,6 +1945,283 @@
             if (printState) { document.title = printState.title; printState = null; }
         }
         window.addEventListener('afterprint', restoreAfterPrint);
+
+        // ---------- Small recipe card (5 x 4 in) ----------
+        const SMALL_CARD_BRAND = 'MCAsia Bars & Cafe';   // brand text in the card header: change it here
+        const SMALL_W_MM = 127, SMALL_H_MM = 101.6;       // 5 x 4 inches (landscape)
+        let smallOpts = { method: true, price: false, note: '' };
+        let smallToken = 0;
+
+        // "LONGBEACH HAZELNUT SYRUP 740 ML" -> "LongBeach Hazelnut Syrup" (pack sizes are noise on a small card)
+        function smallIngName(item) {
+            const raw = String(item == null ? '' : item).replace(/\s+\d[\d,.]*\s*(?:ML|G|KG|L)\b(?:\s*\([^)]*\))?\s*$/i, '');
+            return tidy(raw).replace(/(\d)pct\.?/gi, '$1%');
+        }
+        function smallAmt(a) {
+            const q = qty(a);
+            const n = parseFloat(String(q.n).replace(/,/g, ''));
+            return isNaN(n) ? fmtAmt(a) : (fmtNum(n) + ' ' + q.u).trim();
+        }
+        function smallTitleSize(t) {
+            const n = String(t).length;
+            return n <= 10 ? 25 : n <= 16 ? 22 : n <= 24 ? 19 : n <= 34 ? 16 : 14;
+        }
+
+        function buildSmallCard(r, o) {
+            const n = nameParts(r);
+            const ings = (r.ingredients || []).filter(function (i) { return !/CUP\s*&\s*LID/i.test(String(i.item)); });
+            const steps = stepsOf(r);
+            const withMethod = !!(o.method && steps.length);
+            const price = (o.price && showPrices && hasMenuPrice(r)) ? money(r.menuPrice) : '';
+            const note = String(o.note || '').trim();
+            const cup = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#e0a846" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/></svg>';
+            const photoStyle = r.image ? ` style="background-image:url('${String(r.image).replace(/'/g, '%27')}')"` : '';
+            const rows = ings.map(function (i) {
+                return `<div class="sc-row"><span class="nm">${esc(smallIngName(i.item))}</span><span class="dt"></span><span class="am">${esc(smallAmt(i.amount))}</span></div>`;
+            }).join('');
+            const stepRows = steps.map(function (st, j) {
+                return `<div class="sc-step"><i>${j + 1}</i><span>${esc(sent(st))}</span></div>`;
+            }).join('');
+            return `<div class="sc${withMethod ? '' : ' nomethod'}">
+              <div class="sc-head">
+                <div class="sc-top"><span>Recipe Card</span><b>${esc(SMALL_CARD_BRAND)}</b></div>
+                <h1 class="sc-title" style="font-size:${smallTitleSize(n.title)}px">${esc(n.title)}</h1>
+                <div class="sc-meta">
+                  ${tempChipText(r) ? `<span class="sc-chip">${esc(tempChipText(r))}</span>` : ''}
+                  ${sizeOf(r) ? `<span class="sc-chip ghost">${esc(sizeOf(r))}</span>` : ''}
+                  ${r.prepTime ? `<span class="sc-chip ghost">${esc(fmtTime(r.prepTime))}</span>` : ''}
+                  ${r.category ? `<span class="sc-chip ghost">${esc(r.category)}</span>` : ''}
+                  ${price ? `<span class="sc-price">${esc(price)}</span>` : ''}
+                </div>
+                <div class="sc-photo"${photoStyle}>${r.image ? '' : cup}</div>
+              </div>
+              <div class="sc-body">
+                <div class="sc-cols">
+                  <div class="sc-ing"><div class="sc-h">Ingredients</div>${rows}</div>
+                  ${withMethod ? `<div class="sc-method"><div class="sc-h">Method</div>${stepRows}</div>` : ''}
+                </div>
+                ${note ? `<div class="sc-call">${esc(note)}</div>` : ''}
+              </div>
+            </div>`;
+        }
+
+        // Shrinks the text a little if the content does not fit; drops the method if it still does not fit
+        function fitSmallCard(card) {
+            const body = card.querySelector('.sc-body');
+            const over = function () { return body.scrollHeight > body.clientHeight + 1; };
+            const tryK = function () {
+                for (let k = 1; k >= 0.84; k -= 0.04) {
+                    card.style.setProperty('--k', k.toFixed(2));
+                    if (!over()) return true;
+                }
+                return false;
+            };
+            if (tryK()) return { methodDropped: false };
+            const m = card.querySelector('.sc-method');
+            if (!m) return { methodDropped: false };
+            m.remove();
+            card.classList.add('nomethod');
+            tryK();
+            return { methodDropped: true };
+        }
+
+        function readSmallOpts() {
+            smallOpts.method = document.getElementById('scMethod').checked;
+            smallOpts.price = showPrices && document.getElementById('scPrice').checked;
+            smallOpts.note = document.getElementById('scNote').value.slice(0, 90);
+        }
+
+        function scaleSmallPreview() {
+            const wrap = document.getElementById('scWrap');
+            const card = document.querySelector('#scPreview .sc');
+            if (!wrap || !card) return;
+            const w = Math.min(480, window.innerWidth - 56);
+            const k = w / 480;
+            card.style.transformOrigin = 'top left';
+            card.style.transform = k < 1 ? 'scale(' + k + ')' : 'none';
+            wrap.style.width = Math.round(480 * k) + 'px';
+            wrap.style.height = Math.round(384 * k) + 'px';
+        }
+
+        function renderSmallPreview() {
+            if (!currentRecipe) return;
+            readSmallOpts();
+            const host = document.getElementById('scPreview');
+            host.innerHTML = buildSmallCard(currentRecipe, smallOpts);
+            const card = host.firstElementChild;
+            const token = ++smallToken;
+            const ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+            ready.then(function () {
+                if (token !== smallToken) return;
+                const res = fitSmallCard(card);
+                document.getElementById('scMsg').textContent = res.methodDropped
+                    ? 'The method is too long for a 5×4 card, so it was left out. Shorten the steps in the sheet to fit it in.'
+                    : '';
+                scaleSmallPreview();
+            });
+            scaleSmallPreview();
+        }
+
+        function openSmallCard() {
+            if (!currentRecipe) return;
+            document.getElementById('scPriceWrap').style.display = showPrices ? '' : 'none';
+            document.getElementById('scPrice').checked = showPrices && smallOpts.price;
+            document.getElementById('scMethod').checked = smallOpts.method;
+            document.getElementById('scNote').value = smallOpts.note;
+            document.getElementById('smallModal').classList.remove('hidden');
+            renderSmallPreview();
+        }
+        function closeSmallCard() { document.getElementById('smallModal').classList.add('hidden'); }
+
+        function endSmallCapture() {
+            const area = document.getElementById('smallArea');
+            area.classList.remove('capturing');
+            area.innerHTML = '';
+            document.getElementById('pdfOverlay').classList.add('hidden');
+        }
+
+        // Draws the card with the browser and returns a canvas (same method as the A4 card, so fonts and photo behave the same)
+        async function renderSmallCanvas(r, o, pixelRatio) {
+            const area = document.getElementById('smallArea');
+            area.innerHTML = buildSmallCard(r, o);
+            area.classList.add('capturing');
+            const card = area.querySelector('.sc');
+            card.classList.add('flat');
+            const photo = area.querySelector('.sc-photo');
+            let photoImg = null, photoSkipped = false;
+
+            if (r.image) {
+                try {
+                    if (!photoCache[r.image]) {
+                        const res = await fetch(r.image, { referrerPolicy: 'no-referrer' });
+                        if (!res.ok) throw new Error('HTTP ' + res.status);
+                        photoCache[r.image] = await blobToDataUrl(await res.blob());
+                    }
+                    photo.style.backgroundImage = 'none';   // drawn onto the canvas below (iPhone browsers often skip CSS backgrounds)
+                    photoImg = await new Promise(function (resolve) {
+                        const im = new Image();
+                        im.onload = function () { resolve(im); };
+                        im.onerror = function () { resolve(null); };
+                        im.src = photoCache[r.image];
+                    });
+                    if (!photoImg) throw new Error('photo could not be decoded');
+                } catch (e) {
+                    console.warn('Photo skipped in small card:', e);
+                    photo.style.backgroundImage = 'none';
+                    photoSkipped = true;
+                }
+            }
+
+            if (document.fonts && document.fonts.ready) await document.fonts.ready;
+            fitSmallCard(card);
+            const fontCss = await getFontEmbedCss();
+            const opts = { pixelRatio: pixelRatio, backgroundColor: '#fffdf9', cacheBust: false };
+            if (fontCss) opts.fontEmbedCSS = fontCss;
+
+            const ua = navigator.userAgent;
+            const isApple = /iP(hone|ad|od)/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) || /^((?!chrome|android|crios|fxios|edg).)*safari/i.test(ua);
+            if (!safariWarmed && isApple) {
+                try { await window.htmlToImage.toCanvas(card, opts); } catch (e) {}
+            }
+            safariWarmed = true;
+
+            const canvas = await window.htmlToImage.toCanvas(card, opts);
+
+            if (photoImg) {
+                try {
+                    const cr = card.getBoundingClientRect(), pr = photo.getBoundingClientRect();
+                    const k = canvas.width / cr.width;
+                    const x = (pr.left - cr.left) * k, y = (pr.top - cr.top) * k, w = pr.width * k, h = pr.height * k, rad = 12 * k;
+                    const sc = Math.max(w / photoImg.naturalWidth, h / photoImg.naturalHeight);
+                    const dw = photoImg.naturalWidth * sc, dh = photoImg.naturalHeight * sc;
+                    const ctx = canvas.getContext('2d');
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(x + rad, y);
+                    ctx.arcTo(x + w, y, x + w, y + h, rad);
+                    ctx.arcTo(x + w, y + h, x, y + h, rad);
+                    ctx.arcTo(x, y + h, x, y, rad);
+                    ctx.arcTo(x, y, x + w, y, rad);
+                    ctx.closePath();
+                    ctx.clip();
+                    ctx.drawImage(photoImg, x + (w - dw) * 0.5, y + (h - dh) * 0.3, dw, dh);
+                    ctx.restore();
+                } catch (e) {
+                    console.warn('Photo draw failed:', e);
+                    photoSkipped = true;
+                }
+            }
+            return { canvas: canvas, photoSkipped: photoSkipped };
+        }
+
+        async function smallExport(kind) {
+            if (!currentRecipe || !pdfToolsReady()) return;
+            readSmallOpts();
+            const r = currentRecipe;   // the small card is always a single drink, not a scaled batch
+            const scrollY = window.scrollY;
+            document.getElementById('pdfMsg').textContent = kind === 'print' ? 'Getting ready to print...' : 'Creating small card...';
+            document.getElementById('pdfCancel').classList.add('hidden');
+            document.getElementById('pdfOverlay').classList.remove('hidden');
+            window.scrollTo(0, 0);
+            try {
+                const isPhone = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+                const out = await renderSmallCanvas(r, smallOpts, kind === 'print' || isPhone ? 3 : 4);
+                const base = ((fullName(r) || 'Recipe') + ' - Small Card').replace(/[\\\/:*?"<>|]/g, '-');
+                if (kind === 'pdf') {
+                    const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: [SMALL_W_MM, SMALL_H_MM] });
+                    pdf.addImage(out.canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, SMALL_W_MM, SMALL_H_MM);
+                    pdf.save(base + '.pdf');
+                    showToast(out.photoSkipped ? '📄 Small card saved (without photo — the browser blocked it)' : '📄 Small card PDF downloaded');
+                } else if (kind === 'png') {
+                    await new Promise(function (resolve) {
+                        out.canvas.toBlob(function (blob) {
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            a.download = base + '.png';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+                            resolve();
+                        }, 'image/png');
+                    });
+                    showToast(out.photoSkipped ? '🖼️ Small card saved (without photo — the browser blocked it)' : '🖼️ Small card PNG downloaded');
+                } else {
+                    const holder = document.getElementById('smallPrint');
+                    holder.innerHTML = '<img alt="">';
+                    const img = holder.firstChild;
+                    img.onload = function () {
+                        let st = document.getElementById('smallPageStyle');
+                        if (!st) { st = document.createElement('style'); st.id = 'smallPageStyle'; document.head.appendChild(st); }
+                        st.textContent = '@page { size: 5in 4in; margin: 0; }';
+                        document.body.classList.add('printing-small');
+                        setTimeout(function () { window.print(); }, 80);
+                    };
+                    img.src = out.canvas.toDataURL('image/jpeg', 0.95);
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('⚠️ Could not create the small card: ' + (err && err.message ? err.message : err));
+            } finally {
+                endSmallCapture();
+                window.scrollTo(0, scrollY);
+            }
+        }
+
+        window.addEventListener('afterprint', function () {
+            document.body.classList.remove('printing-small');
+            const h = document.getElementById('smallPrint'); if (h) h.innerHTML = '';
+            const st = document.getElementById('smallPageStyle'); if (st) st.remove();
+        });
+        window.addEventListener('resize', function () {
+            const m = document.getElementById('smallModal');
+            if (m && !m.classList.contains('hidden')) scaleSmallPreview();
+        });
+        document.addEventListener('keydown', function (e) {
+            const m = document.getElementById('smallModal');
+            if (e.key === 'Escape' && m && !m.classList.contains('hidden')) closeSmallCard();
+        });
+
 
         function openRecipeModal(index) {
             const r0 = recipes[index];
@@ -1842,6 +2287,9 @@
                                 </button>
                                 <button onclick="printRecipe()" class="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs py-2.5 px-3 rounded-xl transition flex items-center justify-center space-x-1.5">
                                     <span>🖨️</span><span>Print</span>
+                                </button>
+                                <button onclick="openSmallCard()" class="col-span-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs py-2.5 px-3 rounded-xl transition flex items-center justify-center space-x-1.5">
+                                    <span>🗂️</span><span>Small Card (5×4 in)</span>
                                 </button>
                             </div>
                         </div>
