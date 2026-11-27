@@ -113,8 +113,9 @@
         .sc, .sc * { box-sizing:border-box; }
         .sc.flat { border-radius:0; }
         .sc-hd { flex:none; padding:14px 22px 0; position:relative; z-index:1; }
-        .sc-wm { position:absolute; right:10px; bottom:10px; width:200px; height:auto; opacity:.12; z-index:0; pointer-events:none; }
+        .sc-wm { position:absolute; right:10px; bottom:10px; width:200px; height:auto; opacity:.08; z-index:0; pointer-events:none; }
         .sc.port .sc-wm { width:140px; }
+        .sc:not(.nomethod) .sc-wm { opacity:.055; }   /* even quieter when it sits behind the steps */
         .sc-top { display:flex; justify-content:space-between; align-items:flex-start; font-family:var(--serif); font-style:italic; font-size:12px; color:var(--muted); }
         .sc-logo { display:block; height:32px; width:auto; }
         .sc-top b { font-family:var(--sans); font-style:normal; font-size:7.5px; letter-spacing:.16em; text-transform:uppercase; font-weight:700; color:var(--ink); }
@@ -143,7 +144,7 @@
         .sc:not(.nomethod) .sc-row { padding:calc(1.2px * var(--k)) 0; font-size:calc(9.8px * var(--k)); }
         /* Two-column ingredients: landscape fallback for long lists (photo gets a bit narrower to make room) */
         .sc.two .sc-rows { display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; column-gap:14px; }
-        .sc.two .sc-photo, .sc.two:not(.nomethod) .sc-photo { width:26%; }
+        .sc.two:not(.port) .sc-photo, .sc.two:not(.port):not(.nomethod) .sc-photo { width:26%; }
         .sc-call { flex:none; margin-top:auto; font-family:var(--serif); text-transform:uppercase; font-size:calc(15px * var(--k)); line-height:1.05; letter-spacing:.01em; color:var(--ink); }
         .sc-step { display:flex; gap:6px; padding:calc(1.4px * var(--k)) 0; font-size:calc(9px * var(--k)); line-height:1.36; }
         .sc-step i { font-style:normal; flex:none; width:calc(12px * var(--k)); height:calc(12px * var(--k)); border-radius:50%; background:var(--ink); color:#fff6ea; font-size:calc(7.5px * var(--k)); font-weight:700; text-align:center; line-height:calc(12px * var(--k)); margin-top:1px; }
@@ -2046,19 +2047,38 @@
         }
 
         // Trims filler words from a step so it takes less room on the small card (amounts and actions stay the same)
-        function smallShortStep(t) {
-            return String(t || '')
+        function smallShortStep(t, tight) {
+            let x = String(t || '')
                 .replace(/\s*\((?:approx\.?|about)[^)]*\)/gi, '')
                 .replace(/\bLong ?beach\s+/gi, '')
                 .replace(/\b(?:cold\s+)?Milcasa\s+Full ?cream\s+Milk(?:\s+3\.5%?)?/gi, 'milk')
                 .replace(/\s+(?:into|in|to|onto)\s+the\s+(?:serving\s+)?(?:cup|glass|pitcher)\b/gi, '')
                 .replace(/\s+and\s+serve(?:\s+immediately)?(?:\s+with\s+a\s+straw)?\s*\.?$/i, '.')
-                .replace(/\s+/g, ' ')
-                .replace(/\s+([.,;])/g, '$1')
-                .trim();
+                // more filler that never changes the action
+                .replace(/\b(?:make sure to|be sure to|ensure that you|ensure you|remember to)\s+/gi, '')
+                .replace(/\b(?:slowly|gently|carefully|thoroughly|lightly|quickly)\s+/gi, '')
+                .replace(/\s+and\s+set\s+aside\b/gi, '')
+                .replace(/\bin order to\b/gi, 'to')
+                .replace(/\b(\d[\d.,]*)\s*grams?\b/gi, '$1g')
+                .replace(/\b(\d[\d.,]*)\s*(?:milliliters?|millilitres?)\b/gi, '$1ml');
+            if (tight) {
+                // last-resort wording, used only when the card would otherwise lose its steps
+                x = x.replace(/\buntil\s+(?:it\s+is\s+|it's\s+|completely\s+|fully\s+|well\s+)+(smooth|blended|mixed|combined|dissolved)\b/gi, 'until $1')
+                     .replace(/\b(?:and\s+then|then\s+and)\b/gi, 'then')
+                     .replace(/\bon top of\b/gi, 'over')
+                     .replace(/\bapproximately\s+/gi, '')
+                     .replace(/\b(?:the|a|an)\s+(?=[a-z])/gi, '')
+                     .replace(/\s+to\s+(?:finish|garnish)\b/gi, '');
+            }
+            x = x.replace(/\s+/g, ' ').replace(/\s+([.,;])/g, '$1').trim();
+            return x.charAt(0).toUpperCase() + x.slice(1);   // removing a leading word like "Slowly" must not leave a lowercase start
         }
         function smallSteps(r) {
-            return stepsOf(r).map(smallShortStep).filter(Boolean);
+            return stepsOf(r).map(function (t) { return smallShortStep(t); }).filter(Boolean);
+        }
+        // Tighter wording of the same steps (same order), used by the fit as a last resort before dropping the method
+        function smallTightSteps(r) {
+            return stepsOf(r).filter(function (t) { return smallShortStep(t); }).map(function (t) { return smallShortStep(t, true); });
         }
 
         function buildSmallCard(r, o) {
@@ -2077,8 +2097,10 @@
             const rows = ings.map(function (i) {
                 return `<div class="sc-row"><span class="nm">${esc(smallIngName(i.item))}</span><span class="am">${esc(smallAmt(i.amount))}</span></div>`;
             }).join('');
+            const tight = (o.stepsText == null) ? smallTightSteps(r) : null;   // never reword steps the person typed
             const stepRows = steps.map(function (st, j) {
-                return `<div class="sc-step"><i>${j + 1}</i><span>${esc(sent(st))}</span></div>`;
+                const sh = (tight && tight.length === steps.length && tight[j]) ? ` data-short="${esc(sent(tight[j]))}"` : '';
+                return `<div class="sc-step"><i>${j + 1}</i><span${sh}>${esc(sent(st))}</span></div>`;
             }).join('');
             return `<div class="sc${D.land ? '' : ' port'}${withMethod ? '' : ' nomethod'}">
               ${SMALL_CARD_LOGO ? `<img class="sc-wm" src="${SMALL_CARD_LOGO}" alt="">` : ''}
@@ -2165,7 +2187,7 @@
                 }
                 return false;
             };
-            const canTwo = !port && card.querySelectorAll('.sc-row').length >= 7;
+            const canTwo = card.querySelectorAll('.sc-row').length >= 7;   // landscape and portrait
             const setTwo = function (on) {
                 card.classList.toggle('two', on);
                 const box = card.querySelector('.sc-rows');
@@ -2174,13 +2196,24 @@
             // One column first; for long lists in landscape, two columns before giving up readable text size
             const tryLayouts = function (floor) {
                 setTwo(false);
-                if (tryK(floor)) return true;
-                if (canTwo) { setTwo(true); if (tryK(floor)) return true; setTwo(false); }
-                return false;
+                // Long list: if one column would need text smaller than ~90%, two columns are nicer than tiny text
+                if (canTwo) {
+                    if (tryK(0.9)) return true;
+                    setTwo(true);
+                    if (tryK(floor)) return true;
+                    setTwo(false);
+                }
+                return tryK(floor);
             };
             if (tryLayouts(0.78)) return { methodDropped: false };
             const m = card.querySelector('.sc-method');
             if (!m) { if (canTwo) setTwo(true); tryK(0.5); return { methodDropped: false }; }
+            // Before dropping the steps, try the tighter wording of the same steps
+            const shorts = m.querySelectorAll('.sc-step span[data-short]');
+            if (shorts.length) {
+                shorts.forEach(function (sp) { sp.textContent = sp.getAttribute('data-short'); });
+                if (tryLayouts(0.78)) return { methodDropped: false };
+            }
             m.remove();
             card.classList.add('nomethod');
             if (!tryLayouts(0.78)) { if (canTwo) setTwo(true); tryK(0.5); }
