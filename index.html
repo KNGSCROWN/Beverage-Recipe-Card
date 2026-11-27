@@ -108,11 +108,13 @@
         #smallPrint { display:none; overflow:hidden; }
         #smallPrint img { display:block; }
         .sc { --ink:#1f1a17; --muted:#6f655d; --paper:#fffdf9; --crema:#e0a846; --k:1; --serif:'Instrument Serif','Times New Roman',Georgia,serif; --sans:'Instrument Sans',system-ui,Arial,sans-serif;
-              width:480px; height:360px; display:flex; flex-direction:column; background:var(--paper); color:var(--ink); font-family:var(--sans); overflow:hidden; border-radius:14px; text-align:left; }
+              position:relative; width:480px; height:360px; display:flex; flex-direction:column; background:var(--paper); color:var(--ink); font-family:var(--sans); overflow:hidden; border-radius:14px; text-align:left; }
         .sc.port { width:360px; height:480px; }
         .sc, .sc * { box-sizing:border-box; }
         .sc.flat { border-radius:0; }
-        .sc-hd { flex:none; padding:14px 22px 0; }
+        .sc-hd { flex:none; padding:14px 22px 0; position:relative; z-index:1; }
+        .sc-wm { position:absolute; right:10px; bottom:10px; width:200px; height:auto; opacity:.12; z-index:0; pointer-events:none; }
+        .sc.port .sc-wm { width:140px; }
         .sc-top { display:flex; justify-content:space-between; align-items:flex-start; font-family:var(--serif); font-style:italic; font-size:12px; color:var(--muted); }
         .sc-logo { display:block; height:32px; width:auto; }
         .sc-top b { font-family:var(--sans); font-style:normal; font-size:7.5px; letter-spacing:.16em; text-transform:uppercase; font-weight:700; color:var(--ink); }
@@ -121,20 +123,29 @@
         .sc-meta { margin-top:9px; display:flex; flex-wrap:wrap; align-items:baseline; gap:3px 10px; font-size:8px; letter-spacing:.14em; text-transform:uppercase; font-weight:600; color:var(--muted); }
         .sc-meta .tp { color:var(--ink); font-weight:700; }
         .sc-price { margin-left:auto; font-family:var(--serif); font-size:17px; letter-spacing:0; text-transform:none; color:var(--ink); font-weight:400; }
-        .sc-main { flex:1; min-height:0; display:flex; gap:18px; margin-top:12px; }
-        .sc-photo { flex:none; width:46%; border-top-right-radius:28px; background:#e9dfcf center 30% / cover no-repeat; display:flex; align-items:center; justify-content:center; }
-        .sc-body { flex:1; min-width:0; min-height:0; overflow:hidden; padding:2px 22px 16px 0; display:flex; flex-direction:column; gap:calc(10px * var(--k)); }
+        .sc-main { flex:1; min-height:0; display:flex; gap:18px; margin-top:8px; position:relative; z-index:1; }
+        .sc-photo { flex:none; width:46%; border-top-right-radius:28px; background:var(--paper); position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+        .sc-photo.empty { background:#e9dfcf; }
+        .sc.port .sc-main { flex-direction:column; gap:0; }
+        .sc.port .sc-body { order:1; flex:none; padding:2px 22px 8px 22px; }
+        .sc.port .sc-photo { order:2; flex:1 1 0; min-height:0; width:52%; border-top-right-radius:28px; }
+        .sc.port:not(.nomethod) .sc-photo { width:52%; }
+        .sc-photo img { position:absolute; width:100%; height:100%; left:0; top:0; object-fit:cover; object-position:50% 50%; max-width:none; }
+        .sc-body { flex:1; min-width:0; min-height:0; overflow:hidden; padding:2px 22px 16px 0; display:flex; flex-direction:column; gap:calc(7px * var(--k)); }
         .sc-lab { font-family:var(--serif); font-style:italic; font-size:calc(15px * var(--k)); line-height:1; margin:0 0 4px; color:var(--ink); }
-        .sc-row { display:flex; justify-content:space-between; align-items:baseline; gap:8px; padding:calc(2.6px * var(--k)) 0; border-bottom:1px solid #eadfce; font-size:calc(10.5px * var(--k)); line-height:1.28; }
+        .sc-row { display:flex; justify-content:space-between; align-items:baseline; gap:8px; padding:calc(3px * var(--k)) 0; font-size:calc(10.5px * var(--k)); line-height:1.28; }
         .sc-row .am { font-weight:700; white-space:nowrap; }
-        .sc.nomethod .sc-lab { font-size:17px; }
-        .sc.nomethod .sc-row { padding:4.5px 0; font-size:12px; }
+        .sc.nomethod .sc-lab { font-size:calc(17px * var(--k)); }
+        .sc.nomethod .sc-row { padding:calc(2.6px * var(--k)) 0; font-size:calc(12px * var(--k)); }
         .sc:not(.nomethod) .sc-photo { width:32%; }
-        .sc:not(.nomethod) .sc-body { gap:calc(7px * var(--k)); }
+        .sc:not(.nomethod) .sc-body { gap:calc(5px * var(--k)); }
         .sc:not(.nomethod) .sc-lab { font-size:calc(13px * var(--k)); margin-bottom:2px; }
-        .sc:not(.nomethod) .sc-row { padding:calc(1.9px * var(--k)) 0; font-size:calc(9.8px * var(--k)); }
+        .sc:not(.nomethod) .sc-row { padding:calc(1.2px * var(--k)) 0; font-size:calc(9.8px * var(--k)); }
+        /* Two-column ingredients: landscape fallback for long lists (photo gets a bit narrower to make room) */
+        .sc.two .sc-rows { display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; column-gap:14px; }
+        .sc.two .sc-photo, .sc.two:not(.nomethod) .sc-photo { width:26%; }
         .sc-call { flex:none; margin-top:auto; font-family:var(--serif); text-transform:uppercase; font-size:calc(15px * var(--k)); line-height:1.05; letter-spacing:.01em; color:var(--ink); }
-        .sc-step { display:flex; gap:6px; padding:calc(2.2px * var(--k)) 0; font-size:calc(9px * var(--k)); line-height:1.36; }
+        .sc-step { display:flex; gap:6px; padding:calc(1.4px * var(--k)) 0; font-size:calc(9px * var(--k)); line-height:1.36; }
         .sc-step i { font-style:normal; flex:none; width:calc(12px * var(--k)); height:calc(12px * var(--k)); border-radius:50%; background:var(--ink); color:#fff6ea; font-size:calc(7.5px * var(--k)); font-weight:700; text-align:center; line-height:calc(12px * var(--k)); margin-top:1px; }
         @media print {
             body.printing-small > *:not(#smallPrint) { display:none !important; }
@@ -491,6 +502,17 @@
                 <div id="scStepsWrap" style="display:none">
                     <div class="mb-1">Steps <span class="font-normal text-gray-500 dark:text-coffee-200">(one per line, shorten here to fit this card)</span></div>
                     <textarea id="scSteps" rows="5" oninput="smallStepsDirty = true; renderSmallPreview()" class="w-full px-3 py-2 rounded-lg border border-coffee-200 dark:border-coffee-700 bg-white dark:bg-coffee-800 dark:text-white text-xs font-normal leading-snug"></textarea>
+                </div>
+                <div class="flex items-center gap-3 flex-wrap">
+                    <span>Photo</span>
+                    <select id="scFocus" onchange="renderSmallPreview()" class="sel" style="padding-top:.35rem;padding-bottom:.35rem" aria-label="Photo focus">
+                        <option value="center">Focus: center</option>
+                        <option value="top">Focus: top</option>
+                        <option value="bottom">Focus: bottom</option>
+                        <option value="left">Focus: left</option>
+                        <option value="right">Focus: right</option>
+                    </select>
+                    <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" id="scFull" onchange="renderSmallPreview()" class="h-4 w-4 accent-amber-500">Show full photo (no crop)</label>
                 </div>
                 <input type="text" id="scNote" maxlength="90" oninput="renderSmallPreview()" placeholder="Optional note, e.g. Garnish with lemon slices and mint" class="w-full px-3 py-2 rounded-lg border border-coffee-200 dark:border-coffee-700 bg-white dark:bg-coffee-800 dark:text-white text-xs font-normal">
             </div>
@@ -1600,7 +1622,8 @@
                     if (!photoImg) throw new Error('photo could not be decoded');
                 } catch (e) {
                     console.warn('Photo skipped in PDF:', e);
-                    photo.style.backgroundImage = 'none';
+                    dropSmallPhotoImg(photo);
+                    photo.classList.add('empty');
                     photoSkipped = true;
                 }
             }
@@ -1629,7 +1652,7 @@
                     const x = (pr.left - cr.left + b) * k, y = (pr.top - cr.top + b) * k;
                     const w = (pr.width - 2 * b) * k, h = (pr.height - 2 * b) * k;
                     const rad = 13 * k;
-                    const sc = Math.max(w / photoImg.naturalWidth, h / photoImg.naturalHeight);
+                    const sc = Math.max(w / photoImg.naturalWidth, h / photoImg.naturalHeight) * 1.12;   // 12% zoom crops the photo's own rounded corners
                     const dw = photoImg.naturalWidth * sc, dh = photoImg.naturalHeight * sc;
                     const ctx = canvas.getContext('2d');
                     ctx.save();
@@ -1641,6 +1664,8 @@
                     ctx.lineTo(x, y + h);
                     ctx.closePath();
                     ctx.clip();
+                    ctx.fillStyle = '#fffdf9';
+                    ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
                     ctx.drawImage(photoImg, x + (w - dw) * 0.5, y + (h - dh) * 0.3, dw, dh);
                     ctx.restore();
                 } catch (e) {
@@ -1978,14 +2003,29 @@
             const m = document.getElementById('smallModal');
             if (m && !m.classList.contains('hidden')) renderSmallPreview();
         }
-        let smallOpts = { method: false, price: false, note: '', stepsText: null };
+        let smallOpts = { method: false, price: false, note: '', stepsText: null, focus: 'center', full: false };
+        // Where the photo is anchored when it has to be cropped: [x, y] as fractions (0 = left/top, 1 = right/bottom)
+        const SMALL_FOCUS = { center: [0.5, 0.5], top: [0.5, 0], bottom: [0.5, 1], left: [0, 0.5], right: [1, 0.5] };
+        function smallFocusXY(o) { return SMALL_FOCUS[(o && o.focus) || 'center'] || SMALL_FOCUS.center; }
         let smallStepsDirty = false;
         let smallToken = 0;
 
         // "LONGBEACH HAZELNUT SYRUP 740 ML" -> "LongBeach Hazelnut Syrup" (pack sizes are noise on a small card)
         function smallIngName(item) {
             const raw = String(item == null ? '' : item).replace(/\s+\d[\d,.]*\s*(?:ML|G|KG|L)\b(?:\s*\([^)]*\))?\s*$/i, '');
-            return tidy(raw).replace(/(\d)pct\.?/gi, '$1%');
+            let n = tidy(raw).replace(/(\d)pct\.?/gi, '$1%');
+            // Card-only clean-up (the sheet is never changed): drop the brand, fix small words, cut marketing filler
+            const before = n;
+            n = n.replace(/^Long ?beach\s+/i, '')
+                 .replace(/\s+Milky\s+(?:And|&)\s+Creamy\s+Fo?r?mula\b/i, '')
+                 .replace(/\s+Fo?r?mula\b/i, '')   // "Formula" and the "Fomula" typo
+                 .replace(/\s+Milky\s+(?:And|&)\s+Creamy\b/i, '')
+                 .replace(/\s+(?:And|Of|With|For|The)\b/g, function (m) { return m.toLowerCase(); })
+                 .replace(/\s{2,}/g, ' ').trim();
+            // Names that are only partly in capitals ("CREAM CHEESE POWDER and CREAMY") skip tidy(); fix the shouting words here
+            n = n.replace(/\b([A-Z]{3,})\b/g, function (m) { return /^(UHT|BBQ|RTD|PET|UBE)$/.test(m) ? m : m.charAt(0) + m.slice(1).toLowerCase(); });
+            if (!n) n = before;
+            return n.charAt(0).toUpperCase() + n.slice(1);
         }
         function smallAmt(a) {
             const q = qty(a);
@@ -2033,7 +2073,6 @@
             const note = String(o.note || '').trim();
             const tp = String(tempChipText(r) || '').replace(/^[^A-Za-z]+/, '');
             const cup = '<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#b08a4a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/></svg>';
-            const photoStyle = r.image ? ` style="background-image:url('${String(r.image).replace(/'/g, '%27')}')"` : '';
             const t = smallTitleHtml(n.title, D.w);
             const rows = ings.map(function (i) {
                 return `<div class="sc-row"><span class="nm">${esc(smallIngName(i.item))}</span><span class="am">${esc(smallAmt(i.amount))}</span></div>`;
@@ -2042,21 +2081,20 @@
                 return `<div class="sc-step"><i>${j + 1}</i><span>${esc(sent(st))}</span></div>`;
             }).join('');
             return `<div class="sc${D.land ? '' : ' port'}${withMethod ? '' : ' nomethod'}">
+              ${SMALL_CARD_LOGO ? `<img class="sc-wm" src="${SMALL_CARD_LOGO}" alt="">` : ''}
               <div class="sc-hd">
-                <div class="sc-top"><span>Recipe Card</span>${SMALL_CARD_LOGO ? `<img class="sc-logo" src="${SMALL_CARD_LOGO}" alt="${esc(SMALL_CARD_BRAND)}">` : `<b>${esc(SMALL_CARD_BRAND)}</b>`}</div>
+                <div class="sc-top"><span>Recipe Card</span>${SMALL_CARD_LOGO ? '' : `<b>${esc(SMALL_CARD_BRAND)}</b>`}</div>
                 <h1 class="sc-title" style="font-size:${t.size}px">${t.html}</h1>
                 <div class="sc-meta">
                   ${tp ? `<span class="tp">${esc(tp)}</span>` : ''}
                   ${sizeOf(r) ? `<span>${esc(sizeOf(r))}</span>` : ''}
-                  ${r.prepTime ? `<span>${esc(fmtTime(r.prepTime))}</span>` : ''}
-                  ${r.category ? `<span>${esc(r.category)}</span>` : ''}
                   ${price ? `<span class="sc-price">${esc(price)}</span>` : ''}
                 </div>
               </div>
               <div class="sc-main">
-                <div class="sc-photo"${photoStyle}>${r.image ? '' : cup}</div>
+                <div class="sc-photo${r.image ? '' : ' empty'}">${r.image ? `<img src="${esc(r.image)}" alt="" referrerpolicy="no-referrer" style="object-fit:${o.full ? 'contain' : 'cover'};object-position:${smallFocusXY(o)[0] * 100}% ${smallFocusXY(o)[1] * 100}%">` : cup}</div>
                 <div class="sc-body">
-                  <div class="sc-ing"><div class="sc-lab">Ingredients:</div>${rows}</div>
+                  <div class="sc-ing"><div class="sc-lab">Ingredients:</div><div class="sc-rows">${rows}</div></div>
                   ${withMethod ? `<div class="sc-method"><div class="sc-lab">Method:</div>${stepRows}</div>` : ''}
                   ${note ? `<div class="sc-call">${esc(note)}</div>` : ''}
                 </div>
@@ -2064,23 +2102,88 @@
             </div>`;
         }
 
+        // Keeps ingredient rows even: a name either sits clearly on one line (never wraps by a hair when the card is exported)
+        // or, if it is really too long, wraps onto two lines
+        function fixSmallRows(card) {
+            card.querySelectorAll('.sc-row').forEach(function (row) {
+                const nm = row.querySelector('.nm'), am = row.querySelector('.am');
+                if (!nm || !am) return;
+                nm.style.fontSize = '';
+                nm.style.whiteSpace = 'nowrap';
+                const avail = row.clientWidth - am.offsetWidth - 10;
+                const w = nm.offsetWidth;
+                if (w <= avail * 0.96) return;
+                if (w <= avail * 1.32) {
+                    const f = (avail * 0.95) / w;
+                    nm.style.fontSize = (parseFloat(getComputedStyle(nm).fontSize) * f).toFixed(2) + 'px';
+                    return;
+                }
+                nm.style.whiteSpace = '';
+            });
+        }
+
         // Shrinks the text a little if the content does not fit; drops the method if it still does not fit
+        // The logo watermark fills the space next to the photo: from the photo's right edge to the card's right edge,
+        // so it adjusts by itself in landscape, portrait, and with or without steps
+        function sizeSmallWatermark(card) {
+            const wm = card.querySelector('.sc-wm'), photo = card.querySelector('.sc-photo');
+            if (!wm || !photo) return;
+            // Fill the space beside the photo, but never grow taller than the photo, so the logo stays next to it
+            // instead of climbing up behind the ingredients
+            const ratio = (wm.naturalWidth && wm.naturalHeight) ? wm.naturalWidth / wm.naturalHeight : 1.5;
+            const byWidth = card.offsetWidth - photo.offsetWidth - 20;
+            const byHeight = photo.offsetHeight * ratio;
+            wm.style.width = Math.max(80, Math.min(byWidth, byHeight)) + 'px';
+        }
         function fitSmallCard(card) {
+            const res = fitSmallCardCore(card);
+            sizeSmallWatermark(card);
+            return res;
+        }
+        function fitSmallCardCore(card) {
             const body = card.querySelector('.sc-body');
-            const over = function () { return body.scrollHeight > body.clientHeight + 1; };
-            const tryK = function () {
-                for (let k = 1; k >= 0.78; k -= 0.04) {
+            const port = card.classList.contains('port');
+            const over = function () {
+                if (port) { const ph = card.querySelector('.sc-photo'); return !!ph && ph.offsetHeight < (card.querySelector('.sc-method') ? 100 : 150); }
+                return body.scrollHeight > body.clientHeight + 1;
+            };
+            const title = card.querySelector('.sc-title');
+            const baseTitle = title ? parseFloat(title.style.fontSize) || 0 : 0;
+            const setTitle = function (t) { if (title && baseTitle) title.style.fontSize = (baseTitle * t).toFixed(1) + 'px'; };
+            // First shrink the big title (costs nothing in readability), then the body text down to the given floor
+            const tryK = function (floor) {
+                for (let t = 1; t >= 0.6; t -= 0.08) {
+                    setTitle(t);
+                    card.style.setProperty('--k', '1');
+                    fixSmallRows(card);
+                    if (!over()) return true;
+                }
+                for (let k = 0.96; k >= floor - 0.001; k -= 0.04) {
                     card.style.setProperty('--k', k.toFixed(2));
+                    fixSmallRows(card);
                     if (!over()) return true;
                 }
                 return false;
             };
-            if (tryK()) return { methodDropped: false };
+            const canTwo = !port && card.querySelectorAll('.sc-row').length >= 7;
+            const setTwo = function (on) {
+                card.classList.toggle('two', on);
+                const box = card.querySelector('.sc-rows');
+                if (box) box.style.gridTemplateRows = on ? 'repeat(' + Math.ceil(box.children.length / 2) + ', auto)' : '';   // read down each column
+            };
+            // One column first; for long lists in landscape, two columns before giving up readable text size
+            const tryLayouts = function (floor) {
+                setTwo(false);
+                if (tryK(floor)) return true;
+                if (canTwo) { setTwo(true); if (tryK(floor)) return true; setTwo(false); }
+                return false;
+            };
+            if (tryLayouts(0.78)) return { methodDropped: false };
             const m = card.querySelector('.sc-method');
-            if (!m) return { methodDropped: false };
+            if (!m) { if (canTwo) setTwo(true); tryK(0.5); return { methodDropped: false }; }
             m.remove();
             card.classList.add('nomethod');
-            tryK();
+            if (!tryLayouts(0.78)) { if (canTwo) setTwo(true); tryK(0.5); }
             return { methodDropped: true };
         }
 
@@ -2089,6 +2192,8 @@
             smallOpts.price = showPrices && document.getElementById('scPrice').checked;
             smallOpts.note = document.getElementById('scNote').value.slice(0, 90);
             smallOpts.stepsText = smallStepsDirty ? document.getElementById('scSteps').value : null;
+            smallOpts.focus = document.getElementById('scFocus').value;
+            smallOpts.full = document.getElementById('scFull').checked;
         }
 
         function scaleSmallPreview() {
@@ -2134,10 +2239,17 @@
             document.getElementById('scSteps').value = smallSteps(currentRecipe).join('\n');
             setSmallShape(smallLand);
             document.getElementById('scNote').value = smallOpts.note;
+            document.getElementById('scFocus').value = smallOpts.focus;
+            document.getElementById('scFull').checked = smallOpts.full;
             document.getElementById('smallModal').classList.remove('hidden');
             renderSmallPreview();
         }
         function closeSmallCard() { document.getElementById('smallModal').classList.add('hidden'); }
+
+        function dropSmallPhotoImg(photo) {
+            const im = photo.querySelector('img');
+            if (im) im.remove();
+        }
 
         function endSmallCapture() {
             const area = document.getElementById('smallArea');
@@ -2164,7 +2276,7 @@
                         if (!res.ok) throw new Error('HTTP ' + res.status);
                         photoCache[r.image] = await blobToDataUrl(await res.blob());
                     }
-                    photo.style.backgroundImage = 'none';   // drawn onto the canvas below (iPhone browsers often skip CSS backgrounds)
+                    dropSmallPhotoImg(photo);   // drawn onto the canvas below (iPhone browsers often skip remote images)
                     photoImg = await new Promise(function (resolve) {
                         const im = new Image();
                         im.onload = function () { resolve(im); };
@@ -2199,8 +2311,9 @@
                     const cr = card.getBoundingClientRect(), pr = photo.getBoundingClientRect();
                     const k = canvas.width / cr.width;
                     const x = (pr.left - cr.left) * k, y = (pr.top - cr.top) * k, w = pr.width * k, h = pr.height * k, rad = 28 * k;
-                    const sc = Math.max(w / photoImg.naturalWidth, h / photoImg.naturalHeight);
+                    const sc = (o.full ? Math.min : Math.max)(w / photoImg.naturalWidth, h / photoImg.naturalHeight);
                     const dw = photoImg.naturalWidth * sc, dh = photoImg.naturalHeight * sc;
+                    const fxy = smallFocusXY(o);
                     const ctx = canvas.getContext('2d');
                     ctx.save();
                     ctx.beginPath();
@@ -2211,7 +2324,7 @@
                     ctx.arcTo(x, y, x + w, y, rad);
                     ctx.closePath();
                     ctx.clip();
-                    ctx.drawImage(photoImg, x + (w - dw) * 0.5, y + (h - dh) * 0.3, dw, dh);
+                    ctx.drawImage(photoImg, x + (w - dw) * fxy[0], y + (h - dh) * fxy[1], dw, dh);
                     ctx.restore();
                 } catch (e) {
                     console.warn('Photo draw failed:', e);
